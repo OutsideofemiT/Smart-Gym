@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type SetStateAction } from "react";
 import ApiHandler from "../../../utils/ApiHandler";
+import AddItemsModal from "./AddItemsModal";
+import EditItemsModal from "./EditItemsModal";
+import DeleteItemsModal from "./DeleteItemsModal";
 import { format } from "date-fns";
+import { FaEdit, FaRegPlusSquare, FaTrashAlt } from "react-icons/fa";
 import { AgGridReact } from "ag-grid-react";
 import {
   AllCommunityModule,
@@ -14,6 +18,8 @@ import {
 ModuleRegistry.registerModules([AllCommunityModule]);
 import "../../../styles/InventoryManagement.css";
 
+type ModalContent = "add" | "edit" | "delete" | null;
+
 interface InventoryItem {
   _id: string;
   item_name: string;
@@ -23,28 +29,69 @@ interface InventoryItem {
   updatedAt: string;
 }
 
-const CustomHeader: React.FC = () => {
+interface InventoryHeaderProps {
+  setShow: React.Dispatch<SetStateAction<boolean>>;
+  setModalContent: React.Dispatch<SetStateAction<ModalContent>>;
+}
+
+const InventoryHeader: React.FC<InventoryHeaderProps> = ({
+  setShow,
+  setModalContent,
+}) => {
+  const handleShowModal = (content: ModalContent) => {
+    setModalContent(content);
+    setShow(true);
+  };
   return (
-    <div
-      className="inventory-header-container"
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        gap: "8px",
-        width: "inherit",
-      }}
-    >
-      <h3 style={{ paddingTop: 40, paddingBottom: 30 }}>Cafe Inventory</h3>
+    <div className="ag-cell-label-container" role="presentation">
+      <div className="manage-inventory-tools">
+        <span data-ref="eText" className="ag-header-cell-text">
+          Manage Items:
+        </span>
+        <span
+          data-ref="eText"
+          className="ag-header-icon add-inventory-icon"
+          onClick={() => handleShowModal("add")}
+        >
+          <FaRegPlusSquare />
+        </span>
+        <span
+          data-ref="eText"
+          className="ag-header-icon edit-inventory-icon"
+          onClick={() => handleShowModal("edit")}
+        >
+          <FaEdit />
+        </span>
+        <span
+          data-ref="eText"
+          className="ag-header-icon delete-inventory-icon"
+          onClick={() => handleShowModal("delete")}
+        >
+          <FaTrashAlt />
+        </span>
+      </div>
+      <div
+        data-ref="eLabel"
+        className="ag-header-cell-label"
+        role="presentation"
+      >
+        <span data-ref="eText" className="ag-header-cell-text">
+          Cafe Inventory
+        </span>
+      </div>
     </div>
   );
 };
 
 const InventoryManagement: React.FC = () => {
+  const [show, setShow] = useState(false);
+  const [modalContent, setModalContent] = useState<ModalContent>(null);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const colDefs: ColGroupDef[] = [
     {
       headerName: "Cafe Inventory",
-      headerGroupComponent: CustomHeader,
+      headerGroupComponent: InventoryHeader,
+      headerGroupComponentParams: { setShow, setModalContent },
       children: [
         { field: "_id", headerName: "ID", colId: "ID" },
         { field: "item_name", headerName: "Item Name" },
@@ -101,6 +148,20 @@ const InventoryManagement: React.FC = () => {
     selectedRowBackgroundColor: "#11ff7029",
   });
 
+  const modal = ((): React.ReactNode => {
+    switch (modalContent) {
+      case "add":
+        return <AddItemsModal show={show} setShow={setShow} />;
+        break;
+      case "edit":
+        return <EditItemsModal show={show} setShow={setShow} />;
+        break;
+      case "delete":
+        return <DeleteItemsModal show={show} setShow={setShow} />;
+        break;
+    }
+  })();
+
   const fetchAllInventory = async () => {
     try {
       const { data } = await ApiHandler.get("/cafe-inventory/");
@@ -114,6 +175,7 @@ const InventoryManagement: React.FC = () => {
   useEffect(() => {
     fetchAllInventory();
   }, []);
+
   return (
     <div className="inventory-management-container">
       <div className="inventory-list-wrapper">
@@ -128,6 +190,7 @@ const InventoryManagement: React.FC = () => {
           />
         </div>
       </div>
+      {show && <div className="modal">{modal}</div>}
     </div>
   );
 };

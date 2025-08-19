@@ -2,6 +2,16 @@
   border-radius: 20px;
   overflow: hidden;
   margin-bottom: 20px;
-  transform: scale(.95) translateY(160px);
+  transform: scale(0.95) translateY(160px);
   box-shadow: rgba(0, 0, 0, 0.568) 0px 5px 100px;
+}
+
+.manage-inventory-tools {
+  display: flex;
+  gap: 20px;
+}
+
+.manage-inventory-tools span:not(:first-child):hover {
+  cursor: pointer;
+  color: rgb(50, 177, 0);
 }
