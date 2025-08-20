@@ -19,4 +19,54 @@
 .inventory-management-modal .modal-content {
   position: relative;
   left: 15%;
+  height: fit-content;
+  padding: 0;
+}
+
+.inventory-management-modal .modal-content > div {
+  width: inherit;
+}
+
+.inventory-management-modal .modal-body {
+  padding: 10px;
+}
+
+.inventory-management-modal .modal-footer {
+  justify-content: center;
+}
+
+.inventory-management-modal .h4 {
+  margin: 0;
+}
+
+.add-items-input-entry {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: inherit;
+  justify-self: flex-start;
+}
+
+.add-items-input-entry .item-name-input {
+  justify-self: flex-start;
+}
+
+.add-items-input-entry .item-price-input {
+  width: 80px;
+}
+
+.add-items-input-entry .item-quantity-input {
+  width: 70px;
+}
+
+.add-entry-button {
+  align-self: center;
+  transform: scale(200%);
+  cursor: pointer;
+}
+
+.delete-entry-button {
+  align-self: center;
+  transform: scale(140%);
+  cursor: pointer;
 }
