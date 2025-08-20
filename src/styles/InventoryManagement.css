@@ -15,3 +15,8 @@
   cursor: pointer;
   color: rgb(50, 177, 0);
 }
+
+.inventory-management-modal .modal-content {
+  position: relative;
+  left: 15%;
+}

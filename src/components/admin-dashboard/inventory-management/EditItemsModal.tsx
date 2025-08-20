@@ -7,7 +7,11 @@ const EditItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
   const handleClose = () => setShow(false);
   return (
     <>
-      <Modal show={show} onHide={handleClose}>
+      <Modal
+        show={show}
+        onHide={handleClose}
+        className="inventory-management-modal"
+      >
         <Modal.Header closeButton>
           <Modal.Title>Update Items</Modal.Title>
         </Modal.Header>
