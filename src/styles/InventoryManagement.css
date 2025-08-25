@@ -45,6 +45,12 @@
   justify-content: space-between;
   width: inherit;
   justify-self: flex-start;
+  flex-wrap: wrap;
+}
+
+.add-items-input-entry .item-input-error {
+  width: 100%;
+  padding: 0;
 }
 
 .add-items-input-entry .item-name-input {
@@ -60,9 +66,8 @@
 }
 
 .add-entry-button {
-  align-self: center;
-  transform: scale(200%);
   cursor: pointer;
+  font-size: 2rem;
 }
 
 .delete-entry-button {
