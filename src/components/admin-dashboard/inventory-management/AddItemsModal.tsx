@@ -26,6 +26,12 @@ const AddItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
     setInputs([...inputs, { name: "", price: "", quantity: "" }]);
   };
 
+  const deleteInput = (index: number) => {
+    let newInputs = [...inputs];
+    newInputs.splice(index, 1);
+    setInputs(newInputs);
+  };
+
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     property: keyof ItemInput,
@@ -76,11 +82,11 @@ const AddItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
           <Modal.Title>Add Inventory Items</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {inputs.map((__, index) => (
+          {inputs.map((input, index) => (
             <Form className="add-items-input-entry">
               {emptyInputs.has(index) ? (
                 <Alert className="item-input-error" variant="danger">
-                  Remove unused entry.
+                  Fill in missing information or remove entry.
                 </Alert>
               ) : (
                 ""
@@ -102,6 +108,7 @@ const AddItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
                   placeholder="Protein Meal Bar"
                   key={index}
                   onChange={(e) => handleInputChange(e, "name", index)}
+                  value={input.name}
                   autoFocus
                 />
               </Form.Group>
@@ -115,6 +122,7 @@ const AddItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
                   placeholder="8.00"
                   key={index}
                   onChange={(e) => handleInputChange(e, "price", index)}
+                  value={input.price}
                   autoFocus
                 />
               </Form.Group>
@@ -128,12 +136,14 @@ const AddItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
                   placeholder="10"
                   key={index}
                   onChange={(e) => handleInputChange(e, "quantity", index)}
+                  value={input.quantity}
                   autoFocus
                 />
               </Form.Group>
               <Form.Text
                 className="text-muted delete-entry-button"
                 title="Delete Entry"
+                onClick={() => deleteInput(index)}
               >
                 <GrFormSubtract />
               </Form.Text>
