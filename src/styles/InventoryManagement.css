@@ -80,3 +80,13 @@
   transform: scale(140%);
   cursor: pointer;
 }
+
+.delete-items-modal .modal-content {
+  max-width: none !important;
+  width: 600px !important;
+  margin: auto;
+}
+
+.delete-items-modal p {
+  font-weight: bold;
+}
