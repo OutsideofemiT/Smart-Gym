@@ -6,6 +6,7 @@ import Modal from "react-bootstrap/Modal";
 import Alert from "react-bootstrap/Alert";
 import { FcAddRow } from "react-icons/fc";
 import { GrFormSubtract } from "react-icons/gr";
+import ApiHandler from "../../../utils/ApiHandler";
 
 type ItemInput = {
   name: string;
@@ -13,7 +14,17 @@ type ItemInput = {
   quantity: string;
 };
 
-const AddItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
+type FormattedItems = {
+  item_name: string;
+  price: number;
+  quantity: number;
+};
+
+const AddItemsModal: React.FC<ModalProps> = ({
+  show,
+  setShow,
+  setRenderInventory,
+}) => {
   const [inputs, setInputs] = useState<ItemInput[]>([
     { name: "", price: "", quantity: "" },
   ]);
@@ -42,8 +53,9 @@ const AddItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
     setInputs(newInputs);
   };
 
-  const handleAddItems = () => {
+  const handleAddItems = async () => {
     try {
+      const formattedItems: FormattedItems[] = [];
       let inputError = false;
       inputs.forEach((input, idx) => {
         const pricePattern = /^\d+(\.\d{0,2})?$/;
@@ -60,9 +72,24 @@ const AddItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
         ) {
           inputError = true;
           setInputErrors((prev) => new Set(prev).add(idx));
+        } else {
+          if (!inputError) {
+            const formattedInput = {
+              item_name: input.name,
+              price: Number(input.price),
+              quantity: Number(input.quantity),
+            };
+            formattedItems.push(formattedInput);
+          }
         }
       });
-      if (inputError) throw Error;
+      if (inputError) {
+        throw Error;
+      } else {
+        await ApiHandler.post("/cafe-inventory/bulk", formattedItems);
+        setRenderInventory(true);
+        handleClose();
+      }
     } catch (error) {
       setTimeout(() => {
         setInputErrors(new Set());

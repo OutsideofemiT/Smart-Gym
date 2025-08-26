@@ -86,6 +86,7 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
 const InventoryManagement: React.FC = () => {
   const [show, setShow] = useState(false);
   const [modalContent, setModalContent] = useState<ModalContent>(null);
+  const [renderInventory, setRenderInventory] = useState(false);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const colDefs: ColGroupDef[] = [
     {
@@ -122,7 +123,7 @@ const InventoryManagement: React.FC = () => {
 
   const rowSelection: GridOptions["rowSelection"] = useMemo(() => {
     return { mode: "multiRow" };
-  }, []);
+  }, [renderInventory]);
 
   const autoSizeStrategy: SizeColumnsToFitGridStrategy = useMemo(() => {
     return {
@@ -151,13 +152,31 @@ const InventoryManagement: React.FC = () => {
   const modal = ((): React.ReactNode => {
     switch (modalContent) {
       case "add":
-        return <AddItemsModal show={show} setShow={setShow} />;
+        return (
+          <AddItemsModal
+            show={show}
+            setShow={setShow}
+            setRenderInventory={setRenderInventory}
+          />
+        );
         break;
       case "edit":
-        return <EditItemsModal show={show} setShow={setShow} />;
+        return (
+          <EditItemsModal
+            show={show}
+            setShow={setShow}
+            setRenderInventory={setRenderInventory}
+          />
+        );
         break;
       case "delete":
-        return <DeleteItemsModal show={show} setShow={setShow} />;
+        return (
+          <DeleteItemsModal
+            show={show}
+            setShow={setShow}
+            setRenderInventory={setRenderInventory}
+          />
+        );
         break;
     }
   })();
@@ -174,7 +193,8 @@ const InventoryManagement: React.FC = () => {
 
   useEffect(() => {
     fetchAllInventory();
-  }, []);
+    setRenderInventory(false);
+  }, [renderInventory]);
 
   return (
     <div className="inventory-management-container">
