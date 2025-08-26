@@ -6,6 +6,11 @@
   box-shadow: rgba(0, 0, 0, 0.568) 0px 5px 100px;
 }
 
+.no-selection-warning {
+  padding: 0 5px;
+  margin: 5px;
+}
+
 .manage-inventory-tools {
   display: flex;
   gap: 20px;

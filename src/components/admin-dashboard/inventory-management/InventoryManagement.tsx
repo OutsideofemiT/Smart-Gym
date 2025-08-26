@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useState, type SetStateAction } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useRef,
+  type SetStateAction,
+} from "react";
 import ApiHandler from "../../../utils/ApiHandler";
 import AddItemsModal from "./AddItemsModal";
 import EditItemsModal from "./EditItemsModal";
 import DeleteItemsModal from "./DeleteItemsModal";
 import { format } from "date-fns";
 import { FaEdit, FaRegPlusSquare, FaTrashAlt } from "react-icons/fa";
+import Alert from "react-bootstrap/Alert";
 import { AgGridReact } from "ag-grid-react";
 import {
   AllCommunityModule,
@@ -14,31 +21,38 @@ import {
   type SizeColumnsToFitGridStrategy,
   iconSetQuartz,
   type ColGroupDef,
+  type GridApi,
 } from "ag-grid-community";
 ModuleRegistry.registerModules([AllCommunityModule]);
+import type { InventoryItem } from "../../../types/InventoryManagement.interface";
 import "../../../styles/InventoryManagement.css";
 
 type ModalContent = "add" | "edit" | "delete" | null;
 
-interface InventoryItem {
-  _id: string;
-  item_name: string;
-  price: string;
-  quantity: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface InventoryHeaderProps {
   setShow: React.Dispatch<SetStateAction<boolean>>;
   setModalContent: React.Dispatch<SetStateAction<ModalContent>>;
+  setSelectedItems: React.Dispatch<SetStateAction<InventoryItem[]>>;
+  getSelectedRows: () => InventoryItem[];
 }
 
 const InventoryHeader: React.FC<InventoryHeaderProps> = ({
   setShow,
   setModalContent,
+  setSelectedItems,
+  getSelectedRows,
 }) => {
+  const [noSelectionWarning, setNoSelectionWarning] = useState<boolean>(false);
   const handleShowModal = (content: ModalContent) => {
+    if (content === "edit" || content === "delete") {
+      const selected = getSelectedRows();
+      if (selected.length === 0) {
+        setNoSelectionWarning(true);
+        setTimeout(() => setNoSelectionWarning(false), 3000);
+        return;
+      }
+      setSelectedItems(selected);
+    }
     setModalContent(content);
     setShow(true);
   };
@@ -70,6 +84,13 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
           <FaTrashAlt />
         </span>
       </div>
+      {noSelectionWarning ? (
+        <Alert className="no-selection-warning" variant="danger">
+          No Items selected
+        </Alert>
+      ) : (
+        ""
+      )}
       <div
         data-ref="eLabel"
         className="ag-header-cell-label"
@@ -84,15 +105,22 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
 };
 
 const InventoryManagement: React.FC = () => {
+  const gridApiRef = useRef<GridApi | null>(null);
   const [show, setShow] = useState(false);
   const [modalContent, setModalContent] = useState<ModalContent>(null);
+  const [selectedItems, setSelectedItems] = useState<InventoryItem[]>([]);
   const [renderInventory, setRenderInventory] = useState(false);
   const [items, setItems] = useState<InventoryItem[]>([]);
   const colDefs: ColGroupDef[] = [
     {
       headerName: "Cafe Inventory",
       headerGroupComponent: InventoryHeader,
-      headerGroupComponentParams: { setShow, setModalContent },
+      headerGroupComponentParams: {
+        setShow,
+        setModalContent,
+        setSelectedItems,
+        getSelectedRows: () => gridApiRef.current?.getSelectedRows() ?? [],
+      },
       children: [
         { field: "_id", headerName: "ID", colId: "ID" },
         { field: "item_name", headerName: "Item Name" },
@@ -120,6 +148,10 @@ const InventoryManagement: React.FC = () => {
       ],
     },
   ];
+
+  const onGridReady = (params: { api: GridApi }) => {
+    gridApiRef.current = params.api;
+  };
 
   const rowSelection: GridOptions["rowSelection"] = useMemo(() => {
     return { mode: "multiRow" };
@@ -166,6 +198,7 @@ const InventoryManagement: React.FC = () => {
             show={show}
             setShow={setShow}
             setRenderInventory={setRenderInventory}
+            selectedItems={selectedItems}
           />
         );
         break;
@@ -175,6 +208,7 @@ const InventoryManagement: React.FC = () => {
             show={show}
             setShow={setShow}
             setRenderInventory={setRenderInventory}
+            selectedItems={selectedItems}
           />
         );
         break;
@@ -207,6 +241,7 @@ const InventoryManagement: React.FC = () => {
             autoSizeStrategy={autoSizeStrategy}
             theme={myTheme}
             domLayout="autoHeight"
+            onGridReady={onGridReady}
           />
         </div>
       </div>

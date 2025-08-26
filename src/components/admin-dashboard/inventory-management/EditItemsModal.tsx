@@ -3,7 +3,11 @@ import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
 
-const EditItemsModal: React.FC<ModalProps> = ({ show, setShow }) => {
+const EditItemsModal: React.FC<ModalProps> = ({
+  show,
+  selectedItems,
+  setShow,
+}) => {
   const handleClose = () => setShow(false);
   return (
     <>
