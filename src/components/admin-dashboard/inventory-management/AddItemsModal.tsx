@@ -7,18 +7,10 @@ import Alert from "react-bootstrap/Alert";
 import { FcAddRow } from "react-icons/fc";
 import { GrFormSubtract } from "react-icons/gr";
 import ApiHandler from "../../../utils/ApiHandler";
-
-type ItemInput = {
-  name: string;
-  price: string;
-  quantity: string;
-};
-
-type FormattedItems = {
-  item_name: string;
-  price: number;
-  quantity: number;
-};
+import type {
+  ItemInput,
+  FormattedItems,
+} from "../../../types/InventoryManagement.interface";
 
 const AddItemsModal: React.FC<ModalProps> = ({
   show,
@@ -125,10 +117,7 @@ const AddItemsModal: React.FC<ModalProps> = ({
               ) : (
                 ""
               )}
-              <Form.Group
-                className="mb-3 item-name-input"
-                controlId="exampleForm.ControlInput1"
-              >
+              <Form.Group className="mb-3" controlId="formItemName">
                 <Form.Label>Item Name</Form.Label>
                 <Form.Control
                   type="text"
@@ -139,10 +128,7 @@ const AddItemsModal: React.FC<ModalProps> = ({
                   autoFocus
                 />
               </Form.Group>
-              <Form.Group
-                className="mb-3 item-price-input"
-                controlId="exampleForm.ControlTextarea1"
-              >
+              <Form.Group className="mb-3" controlId="formPrice">
                 <Form.Label>Price</Form.Label>
                 <Form.Control
                   type="number"
@@ -153,10 +139,7 @@ const AddItemsModal: React.FC<ModalProps> = ({
                   autoFocus
                 />
               </Form.Group>
-              <Form.Group
-                className="mb-3 item-quantity-input"
-                controlId="exampleForm.ControlInput1"
-              >
+              <Form.Group className="mb-3" controlId="formQuantity">
                 <Form.Label>Quantity</Form.Label>
                 <Form.Control
                   type="number"

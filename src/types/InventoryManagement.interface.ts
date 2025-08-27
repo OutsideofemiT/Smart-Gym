@@ -15,3 +15,15 @@ export interface ModalProps {
   setRenderInventory: React.Dispatch<SetStateAction<boolean>>;
   selectedItems?: InventoryItem[];
 }
+
+export type ItemInput = {
+  name: string;
+  price: string;
+  quantity: string;
+};
+
+export type FormattedItems = {
+  item_name: string;
+  price: number;
+  quantity: number;
+};

@@ -23,9 +23,10 @@
 
 .inventory-management-modal .modal-content {
   position: relative;
-  left: 15%;
+  left: 25%;
   height: fit-content;
   padding: 0;
+  max-width: none !important;
 }
 
 .inventory-management-modal .modal-content > div {
@@ -33,7 +34,7 @@
 }
 
 .inventory-management-modal .modal-body {
-  padding: 10px;
+  padding: 15px;
 }
 
 .inventory-management-modal .modal-footer {
@@ -58,15 +59,16 @@
   padding: 0;
 }
 
-.add-items-input-entry .item-name-input {
+.add-items-input-entry #formItemName {
   justify-self: flex-start;
+  width: 260px;
 }
 
-.add-items-input-entry .item-price-input {
+.add-items-input-entry #formPrice {
   width: 80px;
 }
 
-.add-items-input-entry .item-quantity-input {
+.add-items-input-entry #formQuantity {
   width: 70px;
 }
 
@@ -89,4 +91,25 @@
 
 .delete-items-modal p {
   font-weight: bold;
+}
+
+.update-items-modal .modal-content {
+  position: relative;
+  left: 15%;
+  max-width: none !important;
+  width: 650px !important;
+}
+
+.update-items-input-entry {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.update-items-input-entry #formPrice {
+  width: 80px;
+}
+
+.update-items-input-entry #formQuantity {
+  width: 70px;
 }
