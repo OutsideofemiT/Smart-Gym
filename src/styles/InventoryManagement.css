@@ -103,7 +103,16 @@
 .update-items-input-entry {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
+  width: inherit;
   gap: 20px;
+}
+
+.update-items-input-entry .item-input-error {
+  position: relative;
+  left: 80px;
+  width: 70%;
+  padding: 0;
 }
 
 .update-items-input-entry #formPrice {

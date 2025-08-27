@@ -2,20 +2,32 @@ import { useState, type ChangeEvent } from "react";
 import type {
   ModalProps,
   ItemInput,
+  FormattedItems,
 } from "../../../types/InventoryManagement.interface";
+import ApiHandler from "../../../utils/ApiHandler";
 import Button from "react-bootstrap/Button";
 import Form from "react-bootstrap/Form";
 import Modal from "react-bootstrap/Modal";
+import Alert from "react-bootstrap/Alert";
+
 type UpdatedItemInput = {
   [_id: string]: ItemInput;
 };
+
+type UpdatedItemsFormatted = {
+  _id: string;
+} & FormattedItems;
 
 const EditItemsModal: React.FC<ModalProps> = ({
   show,
   selectedItems,
   setShow,
+  setRenderInventory,
 }) => {
   const [updatedItems, setUpdatedItems] = useState<UpdatedItemInput>({});
+  const [emptyInputs, setEmptyInputs] = useState(new Set());
+  const [inputErrors, setInputErrors] = useState(new Set());
+
   const handleClose = () => setShow(false);
 
   const handleInputChange = (
@@ -36,6 +48,56 @@ const EditItemsModal: React.FC<ModalProps> = ({
     const updatedItem = { ...item, [property]: e.target.value };
     setUpdatedItems((prev) => ({ ...prev, [itemId]: updatedItem }));
   };
+
+  const handleUpdateItems = async () => {
+    const formattedItems: UpdatedItemsFormatted[] = [];
+
+    try {
+      let inputError = false;
+      for (const id in updatedItems) {
+        const item = updatedItems[id];
+
+        const pricePattern = /^\d+(\.\d{0,2})?$/;
+        const priceRegex = new RegExp(pricePattern);
+        const quantityPattern = /^\d+$/;
+        const quantityRegex = new RegExp(quantityPattern);
+
+        if (!item.name || !item.price || !item.quantity) {
+          inputError = true;
+          setEmptyInputs((prev) => new Set(prev).add(id));
+        } else if (
+          !priceRegex.test(item.price) ||
+          !quantityRegex.test(item.quantity)
+        ) {
+          inputError = true;
+          setInputErrors((prev) => new Set(prev).add(id));
+        } else {
+          if (!inputError) {
+            const formattedInput = {
+              _id: id,
+              item_name: item.name,
+              price: Number(item.price),
+              quantity: Number(item.quantity),
+            };
+            formattedItems.push(formattedInput);
+          }
+        }
+      }
+      if (inputError) {
+        throw Error;
+      } else {
+        await ApiHandler.put("/cafe-inventory/bulk", formattedItems);
+        setRenderInventory(true);
+        handleClose();
+      }
+    } catch (error) {
+      setTimeout(() => {
+        setInputErrors(new Set());
+        setEmptyInputs(new Set());
+      }, 5000);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -49,6 +111,20 @@ const EditItemsModal: React.FC<ModalProps> = ({
         <Modal.Body>
           {selectedItems?.map((item, index) => (
             <Form className="update-items-input-entry">
+              {emptyInputs.has(item._id) ? (
+                <Alert className="item-input-error" variant="danger">
+                  Fill in missing information or remove entry.
+                </Alert>
+              ) : (
+                ""
+              )}
+              {inputErrors.has(item._id) ? (
+                <Alert className="item-input-error" variant="danger">
+                  Use correct format: Price: 0.00 & Quantity: 0
+                </Alert>
+              ) : (
+                ""
+              )}
               <Form.Group className="mb-3" controlId="formId">
                 <Form.Label>ID</Form.Label>
                 <Form.Control
@@ -99,7 +175,7 @@ const EditItemsModal: React.FC<ModalProps> = ({
           <Button variant="secondary" onClick={handleClose}>
             Close
           </Button>
-          <Button variant="primary" onClick={handleClose}>
+          <Button variant="primary" onClick={handleUpdateItems}>
             Update Items
           </Button>
         </Modal.Footer>
