@@ -25,6 +25,7 @@ const EditItemsModal: React.FC<ModalProps> = ({
   setRenderInventory,
 }) => {
   const [updatedItems, setUpdatedItems] = useState<UpdatedItemInput>({});
+  const [noUpdates, setNoUpdates] = useState<boolean>(false);
   const [emptyInputs, setEmptyInputs] = useState(new Set());
   const [inputErrors, setInputErrors] = useState(new Set());
 
@@ -83,7 +84,10 @@ const EditItemsModal: React.FC<ModalProps> = ({
           }
         }
       }
-      if (inputError) {
+      if (Object.keys(updatedItems).length === 0) {
+        setNoUpdates(true);
+        throw Error;
+      } else if (inputError) {
         throw Error;
       } else {
         await ApiHandler.put("/cafe-inventory/bulk", formattedItems);
@@ -94,6 +98,7 @@ const EditItemsModal: React.FC<ModalProps> = ({
       setTimeout(() => {
         setInputErrors(new Set());
         setEmptyInputs(new Set());
+        setNoUpdates(false);
       }, 5000);
     }
   };
@@ -107,13 +112,20 @@ const EditItemsModal: React.FC<ModalProps> = ({
       >
         <Modal.Header closeButton>
           <Modal.Title>Update Items</Modal.Title>
+          {noUpdates ? (
+            <Alert className="no-updates-error" variant="danger">
+              No updates submitted
+            </Alert>
+          ) : (
+            ""
+          )}
         </Modal.Header>
         <Modal.Body>
           {selectedItems?.map((item, index) => (
             <Form className="update-items-input-entry">
               {emptyInputs.has(item._id) ? (
                 <Alert className="item-input-error" variant="danger">
-                  Fill in missing information or remove entry.
+                  Fill in missing information or remove entry
                 </Alert>
               ) : (
                 ""
