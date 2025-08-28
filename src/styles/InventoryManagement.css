@@ -97,7 +97,7 @@
   position: relative;
   left: 15%;
   max-width: none !important;
-  width: 650px !important;
+  width: 765px !important;
 }
 
 .update-items-input-entry {
@@ -113,6 +113,10 @@
   left: 80px;
   width: 70%;
   padding: 0;
+}
+
+.update-items-input-entry #formId {
+  width: 320px;
 }
 
 .update-items-input-entry #formPrice {
