@@ -66,6 +66,7 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
           data-ref="eText"
           className="ag-header-icon add-inventory-icon"
           onClick={() => handleShowModal("add")}
+          title="Add Items"
         >
           <FaRegPlusSquare />
         </span>
@@ -73,6 +74,7 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
           data-ref="eText"
           className="ag-header-icon edit-inventory-icon"
           onClick={() => handleShowModal("edit")}
+          title="Update Items"
         >
           <FaEdit />
         </span>
@@ -80,6 +82,7 @@ const InventoryHeader: React.FC<InventoryHeaderProps> = ({
           data-ref="eText"
           className="ag-header-icon delete-inventory-icon"
           onClick={() => handleShowModal("delete")}
+          title="Delete Items"
         >
           <FaTrashAlt />
         </span>
