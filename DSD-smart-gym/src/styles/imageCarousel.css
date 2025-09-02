@@ -1,0 +1,17 @@
+.imageCarouselName, .imageCarouseltype{
+    color: white;
+    display: flex;
+    justify-content: center;
+    padding: 100px 100px 50px;
+    text-shadow:
+    0 0 5px rgba(0,0,0,0.3),
+    0 0 10px rgba(0,0,0,0.2),
+    0 0 20px rgba(0,0,0,0.2),
+    0 0 40px rgba(0,0,0,0.3);
+}
+.imageCarouselName{
+    font-size: 75px;
+    font-weight: 800;
+    color: #C4F500;
+    
+}

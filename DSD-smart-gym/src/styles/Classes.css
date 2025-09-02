@@ -1,0 +1,102 @@
+/* src/styles/Classes.css */
+
+/* Page wrapper for the classes calendar.
+   Your component uses .classes-calendar-wrapper; keep .classes-wrapper for compatibility. */
+:root {
+  --nav-h: 80px;      /* height of your fixed nav */
+  --page-pad: 24px;   /* top/bottom breathing room */
+}
+
+.classes-calendar-wrapper,
+.classes-wrapper {
+  background: #2a2d32;
+  height: calc(100vh - var(--nav-h) - var(--page-pad));
+  min-height: calc(100vh - var(--nav-h) - var(--page-pad));
+  padding: 8px 12px 16px;
+  box-sizing: border-box;
+}
+
+/* Alerts overlay */
+.alert-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  pointer-events: none;
+}
+.alert-wrapper {
+  pointer-events: auto;
+}
+
+/* ---------- FullCalendar tweaks (dark theme, tight layout) ---------- */
+.fc,
+.fc * {
+  color: #ffffff;
+}
+
+.fc .fc-toolbar-title {
+  color: #ffffff;
+}
+
+.fc .fc-button {
+  background: #2a2d32;
+  border: 1px solid #3a3f45;
+  color: #ffffff;
+}
+.fc .fc-button:hover {
+  filter: brightness(1.1);
+}
+
+.fc-theme-standard .fc-scrollgrid {
+  border: 0;
+}
+
+/* Dim days from other months but keep them visible (since showNonCurrentDates=true) */
+.fc .fc-daygrid-day.fc-day-other {
+  opacity: 0.45;
+}
+
+/* Today background hint */
+.fc .fc-daygrid-day.fc-day-today {
+  background: rgba(176, 255, 54, 0.08);
+}
+
+/* Make event text wrap nicely inside cells */
+.fc .fc-daygrid-event {
+  white-space: normal;
+  word-break: break-word;
+  border: 0;
+  border-radius: 6px;
+  padding: 2px 4px;
+}
+
+/* Header/cell numbers readable on dark bg */
+.fc .fc-daygrid-day-number,
+.fc .fc-col-header-cell-cushion {
+  color: #e7e7e7;
+}
+/* Classes page container */
+.classes-page {
+  min-height: 100vh;
+  padding-top: calc(var(--nav-h, 80px) + 8px);
+}
+:root {
+  /* fixed navbar height you use across the app */
+  --nav-h: 80px;
+}
+
+/* Hero fills the viewport *below* the fixed navbar and shows through it.
+   Padding-top draws the image under the translucent nav so there's no black band. */
+.classes-hero {
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center top;
+  min-height: calc(100vh - var(--nav-h));
+  padding-top: var(--nav-h);
+}
+
