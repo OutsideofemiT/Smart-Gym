@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import ClassList from "../components/classes/ClassList";
-import cycling from "../assets/cycling-class.png";
+import cycling from "../assets/cycling-class.jpg";
 import boxing from "../assets/boxing-class.jpg";
 import yoga from "../assets/yoga-class.png";
 import hiit from "../assets/hiit-class.png";
@@ -52,7 +52,6 @@ const Classes: React.FC = () => {
 
   return (
     <>
-      <div className="classes-wrapper">
         {/* HERO (fills viewport under fixed navbar, no black band) */}
         <div
           className="classes-hero"
@@ -63,7 +62,6 @@ const Classes: React.FC = () => {
 
         {/* Calendar below the hero */}
         <Calendar />
-      </div>
     </>
   );
 };

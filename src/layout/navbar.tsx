@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import { Link } from "react-router-dom";
 import "../styles/HomepageNavBar.css";
 import Logo from "../assets/SG_Icon2.png";
@@ -12,12 +12,14 @@ interface NavbarProps {
   navItem: NavItem[];
 }
 
+
 const Navbar: React.FC<NavbarProps> = ({ navItem }) => {
   return (
     <nav className="public-navbar">
       <div className="public-navbar-container">
         <div className="public-navbar-left">
-          <img className="homepage-logo" src={Logo} alt="Smart Gym Logo" />
+          <img src={Logo} alt="Smart Gym logo" className="h-10 w-auto" />
+
         </div>
         <div className="public-navbar-right">
           <ul className="public-nav-menu">

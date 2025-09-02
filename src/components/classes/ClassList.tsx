@@ -9,7 +9,7 @@ type ClassItem = {
 
 type Props = {
   classes: ClassItem[];
-  setBackgroundImg: (img: string | null) => void;
+  setBackgroundImg: (img: string) => void;
 };
 
 export default function ClassList({classes, setBackgroundImg}: Props) {
