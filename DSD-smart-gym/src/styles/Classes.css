@@ -9,7 +9,7 @@
 
 .classes-calendar-wrapper,
 .classes-wrapper {
-  background-color: #16181b;
+  background: #2a2d32;
   height: calc(100vh - var(--nav-h) - var(--page-pad));
   min-height: calc(100vh - var(--nav-h) - var(--page-pad));
   padding: 8px 12px 16px;
@@ -89,11 +89,6 @@
 :root {
   /* fixed navbar height you use across the app */
   --nav-h: 80px;
-}
-
-/* Dark page background stays, but hero covers area under the nav */
-.classes-wrapper {
-  background-color: #16181b;
 }
 
 /* Hero fills the viewport *below* the fixed navbar and shows through it.
