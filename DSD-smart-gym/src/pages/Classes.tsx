@@ -1,16 +1,16 @@
-import React, { useState } from "react";
-import ClassList from "../components/classes/ClassList";
+import React from "react";
 import cycling from "../assets/cycling-class.png";
 import boxing from "../assets/boxing-class.jpg";
 import yoga from "../assets/yoga-class.png";
 import hiit from "../assets/hiit-class.png";
 import strength from "../assets/strength-training.png";
-import gym from "../assets/gym.png";
 import "../styles/Classes.css";
 import Calendar from "../components/classes/calendar";
+import ClassesTabs from "../components/classes/classesTabs";
+import ImageCarousel from "../components/classes/ImageCarousel";
+
 
 const Classes: React.FC = () => {
-  const [backgroundImage, setBackgroundImage] = useState<string | null>(gym);
 
   const classList = [
     {
@@ -50,19 +50,24 @@ const Classes: React.FC = () => {
     },
   ];
 
+  const showCalendar = location.pathname === "/admin/classes";
+
   return (
     <>
-      <div className="classes-wrapper">
+      <div>
         {/* HERO (fills viewport under fixed navbar, no black band) */}
         <div
           className="classes-hero"
-          style={{ backgroundImage: `url(${backgroundImage || gym})` }}
         >
-          <ClassList classes={classList} setBackgroundImg={setBackgroundImage} />
+          <ImageCarousel
+            classes={classList}
+          />
         </div>
 
         {/* Calendar below the hero */}
-        <Calendar />
+        {showCalendar && <Calendar />}
+
+        <ClassesTabs />
       </div>
     </>
   );

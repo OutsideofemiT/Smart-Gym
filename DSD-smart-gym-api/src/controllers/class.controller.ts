@@ -140,10 +140,20 @@ export const fetchUserClasses = async (req: IAuthenticatedRequest, res: Response
     const userEmail = req.user.id; // id is the email per your auth
 
     const bookings = await ClassBooking.find({ user_id: userEmail }).lean();
-    const classIds = bookings.map((b) => b.class_id);
-    const classes = await Class.find({ _id: { $in: classIds } }).lean();
+    const bookedClassIds = bookings.map((b) => b.class_id);
 
-    return res.status(200).json({ userClasses: classes });
+     const waitlistEntries = await Waitlist.find({ user_id: userEmail }).lean();
+    const waitlistedClassIds = waitlistEntries.map((w) => w.class_id);
+
+    const allclassIds = [...new Set([...bookedClassIds, ...waitlistedClassIds])]
+
+    const classes = await Class.find({ _id: { $in: allclassIds } }).lean();
+
+    const userClasses = classes.map((cls)=>({
+      ...cls,
+      waitlisted: waitlistedClassIds.includes(cls._id.toString())
+    }))
+    return res.status(200).json({ userClasses});
   } catch {
     return res.status(500).json({ error: "Failed to fetch user classes" });
   }

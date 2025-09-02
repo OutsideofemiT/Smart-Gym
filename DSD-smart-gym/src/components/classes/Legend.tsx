@@ -1,3 +1,5 @@
+//Classes ColorLegend
+
 export function ColorLegend() {
   return (
     <div
