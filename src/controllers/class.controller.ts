@@ -29,6 +29,8 @@ const endOfClass = (dateYMD: string, endHHmm: string) => {
 const isTrainer = (req: IAuthenticatedRequest) => req.user?.role === "trainer";
 const isAdmin = (req: IAuthenticatedRequest) => req.user?.role === "admin";
 
+const uidStr = (req: IAuthenticatedRequest) => String(req.user!.user_id);
+
 /** Trainers can manage only their classes; admins can manage any class. */
 const assertCanManageClass = async (req: IAuthenticatedRequest, classId: string) => {
   const cls = await Class.findById(classId);
@@ -37,7 +39,7 @@ const assertCanManageClass = async (req: IAuthenticatedRequest, classId: string)
   if (isAdmin(req)) return { ok: true as const, cls };
 
   if (isTrainer(req)) {
-    if (String((cls as any).trainer_id) === String(req.user!.id)) {
+    if (String((cls as any).trainer_id) === uidStr(req)) {
       return { ok: true as const, cls };
     }
     return { ok: false as const, status: 403 as const, error: "Forbidden: not your class." };
@@ -50,12 +52,12 @@ const assertCanManageClass = async (req: IAuthenticatedRequest, classId: string)
 
 export const createClass = async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    const body = { ...req.body };
+    const body: any = { ...req.body };
     if (typeof body.date === "string") body.date = ymd(body.date);
 
     // If a trainer is creating the class, force ownership
     if (isTrainer(req)) {
-      body.trainer_id = req.user!.id;
+      body.trainer_id = uidStr(req);
     }
 
     const doc = new Class(body);
@@ -134,14 +136,19 @@ export const fetchClasses = async (req: IAuthenticatedRequest, res: Response) =>
 
 export const fetchUserClasses = async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    if (!req.user || !req.user.id) {
+    if (!req.user?.user_id) {
       return res.status(401).json({ message: "User not authenticated" });
     }
-    const userEmail = req.user.id; // id is the email per your auth
+    const userId = uidStr(req);
 
-    const bookings = await ClassBooking.find({ user_id: userEmail }).lean();
-    const classIds = bookings.map((b) => b.class_id);
-    const classes = await Class.find({ _id: { $in: classIds } }).lean();
+    // ✅ Alias at DB layer to avoid snake_case in TS/ESLint
+    const bookings = await ClassBooking.aggregate<{ classId: string }>([
+      { $match: { user_id: userId } },
+      { $project: { _id: 0, classId: "$class_id" } },
+    ]);
+
+    const classIds = bookings.map((b) => String(b.classId));
+    const classes = await Class.find().where("_id").in(classIds).lean();
 
     return res.status(200).json({ userClasses: classes });
   } catch {
@@ -151,19 +158,21 @@ export const fetchUserClasses = async (req: IAuthenticatedRequest, res: Response
 
 export const joinClass = async (req: IAuthenticatedRequest, res: Response) => {
   try {
-    const { id: userId } = req.user!;
+    const userId = uidStr(req);
     const { id } = req.params;
 
-    const gymClass = await Class.findById(id);
+    // Read as plain object so property access (end_time/date) is straightforward
+    const gymClass = await Class.findById(id).lean();
     if (!gymClass) return res.status(404).json({ error: "Class not found." });
     if ((gymClass as any).canceled)
       return res.status(400).json({ error: "This class has been canceled." });
 
-    if (!gymClass.end_time)
+    if (!(gymClass as any).end_time)
       return res.status(400).json({ error: "Class end_time is missing." });
 
     const ended =
-      endOfClass(String(gymClass.date), String(gymClass.end_time)).getTime() < Date.now();
+      endOfClass(String((gymClass as any).date), String((gymClass as any).end_time)).getTime() <
+      Date.now();
     if (ended) return res.status(400).json({ error: "This class has already ended." });
 
     const alreadyBooked = await ClassBooking.findOne({ class_id: id, user_id: userId });
@@ -197,7 +206,7 @@ export const joinClass = async (req: IAuthenticatedRequest, res: Response) => {
 
 export const leaveClass = async (req: IAuthenticatedRequest, res: Response) => {
   const { id } = req.params;
-  const { id: userId } = req.user!;
+  const userId = uidStr(req);
 
   if (!id) return res.status(400).json({ error: "Missing class ID" });
 
@@ -218,21 +227,23 @@ export const leaveClass = async (req: IAuthenticatedRequest, res: Response) => {
 
         if (nextInLine) {
           await nextInLine.deleteOne();
-          await ClassBooking.create({ class_id: id, user_id: nextInLine.user_id });
+          await ClassBooking.create({ class_id: id, user_id: String((nextInLine as any).user_id) });
           await Class.findByIdAndUpdate(id, { $inc: { attendees: 1 } });
 
           if (transporter) {
             try {
-              const profile = await User.findById(nextInLine.user_id);
-              const recipient = (profile as any)?.email || nextInLine.user_id;
-              await transporter.sendMail({
-                from: "'Smart Gym' <noreplysmartgym@gmail.com>",
-                to: recipient,
-                subject: "You’re in! A spot opened up",
-                html: `<p>Good news — you’ve been moved from waitlist to booked for <b>${
-                  (gymClass as any)?.title || "your class"
-                }</b>.</p>`,
-              });
+              const profile = await User.findById((nextInLine as any).user_id);
+              const recipient = (profile as any)?.email; // prefer DB email
+              if (recipient) {
+                await transporter.sendMail({
+                  from: "'Smart Gym' <noreplysmartgym@gmail.com>",
+                  to: recipient,
+                  subject: "You’re in! A spot opened up",
+                  html: `<p>Good news — you’ve been moved from waitlist to booked for <b>${
+                    (gymClass as any)?.title || "your class"
+                  }</b>.</p>`,
+                });
+              }
             } catch {
               /* swallow mail errors */
             }
@@ -268,9 +279,16 @@ export const cancelClass = async (req: IAuthenticatedRequest, res: Response) => 
     (cls as any).canceled_at = new Date();
     await cls.save();
 
-    const [bookings, waitlisted] = await Promise.all([
-      ClassBooking.find({ class_id: id }).lean(),
-      Waitlist.find({ class_id: id }).lean(),
+    // ✅ Alias snake_case -> camelCase in the pipeline
+    const [bookingsAgg, waitlistedAgg] = await Promise.all([
+      ClassBooking.aggregate<{ userId: string }>([
+        { $match: { class_id: id } },
+        { $project: { _id: 0, userId: "$user_id" } },
+      ]),
+      Waitlist.aggregate<{ userId: string }>([
+        { $match: { class_id: id } },
+        { $project: { _id: 0, userId: "$user_id" } },
+      ]),
     ]);
 
     if (transporter) {
@@ -284,7 +302,8 @@ export const cancelClass = async (req: IAuthenticatedRequest, res: Response) => 
 
       const notifyUser = async (userId: string) => {
         const profile = await User.findById(userId).lean();
-        const recipient = (profile as any)?.email || userId;
+        const recipient = (profile as any)?.email;
+        if (!recipient) return;
         const html = `
           <p>We're sorry — your class <b>${(cls as any).title}</b> on
           <b>${new Date((cls as any).date).toLocaleDateString()}</b> at
@@ -294,10 +313,7 @@ export const cancelClass = async (req: IAuthenticatedRequest, res: Response) => 
         await safeSend(recipient, `Class canceled: ${(cls as any).title}`, html);
       };
 
-      await Promise.all([
-        ...bookings.map((b) => notifyUser(b.user_id)),
-        ...waitlisted.map((w) => notifyUser(w.user_id)),
-      ]);
+      await Promise.all([...bookingsAgg, ...waitlistedAgg].map(({ userId }) => notifyUser(String(userId))));
     }
 
     await Waitlist.deleteMany({ class_id: id });
@@ -350,15 +366,17 @@ export const deleteClass = async (req: IAuthenticatedRequest, res: Response) => 
 };
 
 /**
- * List the authenticated trainer’s own classes (admins can filter by ?trainer_id=<email>)
+ * List the authenticated trainer’s own classes (admins can filter by ?trainer_id=<userIdString>)
  * Route example:
  *  - GET /api/classes/trainer/mine
- *  - GET /api/classes/trainer/list?trainer_id=email@example.com  (admin only)
+ *  - GET /api/classes/trainer/list?trainer_id=<userIdString>  (admin only)
  */
 export const getTrainerClasses = async (req: IAuthenticatedRequest, res: Response) => {
   try {
     if (isTrainer(req)) {
-      const mine = await Class.find({ trainer_id: req.user!.id }).sort({ date: 1, start_time: 1 }).lean();
+      const mine = await Class.find({ trainer_id: uidStr(req) })
+        .sort({ date: 1, start_time: 1 })
+        .lean();
       return res.status(200).json({ success: true, data: mine });
     }
 
@@ -374,4 +392,3 @@ export const getTrainerClasses = async (req: IAuthenticatedRequest, res: Respons
     return res.status(500).json({ error: "Failed to fetch trainer classes" });
   }
 };
-

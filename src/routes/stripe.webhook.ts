@@ -2,6 +2,7 @@
 import { Router } from "express";
 import Stripe from "stripe";
 import bodyParser from "body-parser";
+import { CafePurchase } from "../models/cafepurchase.model";
 
 const router = Router();
 

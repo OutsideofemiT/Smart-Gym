@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { requireAuth } from "../middleware/requireAuth";
 import { getCheckoutDetails } from "../controllers/cafepurchase.controller";
 import { IAuthenticatedRequest } from "../types/interface";
+import { CafePurchase } from "../models/cafepurchase.model";
 
 dotenv.config();
 const router = express.Router();
@@ -17,18 +18,15 @@ type CafeCartItem = {
 };
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-  apiVersion: "2025-07-30.basil",
+  apiVersion: "2025-07-30.basil", // ← kept exactly as you had it
 });
 
 function validateCheckoutCartOrThrow(cart: unknown): CafeCartItem[] {
   if (!Array.isArray(cart) || cart.length === 0) {
-    const e: any = new Error(
-      "Invalid cart format. Cart must be a non-empty array of valid items."
-    );
+    const e: any = new Error("Invalid cart format. Cart must be a non-empty array of valid items.");
     e.status = 400;
     throw e;
   }
-
   cart.forEach((item: any, idx: number) => {
     if (
       !item ||
@@ -44,7 +42,6 @@ function validateCheckoutCartOrThrow(cart: unknown): CafeCartItem[] {
       throw e;
     }
   });
-
   return cart as CafeCartItem[];
 }
 
@@ -56,7 +53,16 @@ router.post(
       const { cart, success_url, cancel_url } = req.body ?? {};
       const validCart = validateCheckoutCartOrThrow(cart);
 
-      const userId = req.user!.id; 
+      // ✔ avoid `!req.user?.id`; support user_id or id from JWT
+      const claims = (req.user ?? {}) as any;
+      const userId: string = String(claims.user_id ?? claims.id ?? "");
+      if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+      const email = claims.email || req.body?.email;
+      if (!email) {
+        return res.status(400).json({ error: "Email is required for a café purchase." });
+      }
+
       const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] =
         validCart.map((item) => ({
           price_data: {
@@ -65,10 +71,25 @@ router.post(
               name: item.item_name,
               ...(item.image ? { images: [item.image] } : {}),
             },
-            unit_amount: Math.round(item.price * 100), // cents
+            unit_amount: Math.round(item.price * 100),
           },
           quantity: item.quantityOrdered,
         }));
+
+      const items = validCart.map((i) => ({
+        name: i.item_name,
+        qty: i.quantityOrdered,
+        price: i.price,
+      }));
+      const total = items.reduce((sum, it) => sum + it.qty * it.price, 0);
+
+      const purchase = await CafePurchase.create({
+        userId,
+        email,
+        items,
+        total,
+        status: "pending",
+      });
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
@@ -79,7 +100,17 @@ router.post(
           `${process.env.CLIENT_URL}/cafe?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: cancel_url ?? `${process.env.CLIENT_URL}/cafe?checkout=cancel`,
         metadata: {
-          userId, 
+          kind: "cafe",
+          purchaseId: String(purchase._id),
+          userId,
+          items: JSON.stringify(
+            validCart.map((i) => ({
+              item_name: i.item_name,
+              price: Math.round(i.price * 100),
+              quantity: i.quantityOrdered,
+              image: i.image,
+            }))
+          ),
         },
       });
 
