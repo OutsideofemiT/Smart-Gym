@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import type { TimeOptions } from "../../types/Analytics.interface.ts";
-import type { ClassDataProps } from "../../types/ClassAttendance.interface.ts";
-import TimePeriodButtons from "./TimePeriodButtons";
+import type { TimeOptions } from "../../../types/Analytics.interface.ts";
+import type { ClassDataProps } from "../../../types/ClassAttendance.interface.ts";
+import TimePeriodButtons from "./TimePeriodButtons.tsx";
 import ClassAttendanceMetricCard from "./ClassAttendanceMetricCard.tsx";
-import MetricLayout from "../../layout/MetricLayout.tsx";
+import MetricLayout from "../../../layout/MetricLayout.tsx";
 import ClassAttwnsanceChart from "./ClassAttendanceChart.tsx";
 
 const ClassAttendance: React.FC = () => {

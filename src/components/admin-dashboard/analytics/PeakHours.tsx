@@ -1,5 +1,5 @@
 import PeakHoursMap from "./PeakHoursMap";
-import "../../styles/PeakHours.css";
+import "../../../styles/PeakHours.css";
 
 const PeakHours: React.FC = () => {
   return (
