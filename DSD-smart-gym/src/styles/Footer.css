@@ -1,0 +1,113 @@
+:root{
+  --accent: #BCFD4C;
+  --muted: #BDBDBD;
+  --ink: #0B0F0D;
+
+  /* logo controls */
+  --logo-h: 56px;     
+  --logo-scale: 1.35; 
+}
+
+/* Full-width dark footer */
+.sgf{
+  width: 100%;
+  background: #2e2e2e;
+  color: #fff;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+
+/* Content container */
+.sgf__wrap{
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px;
+}
+
+/* Top grid: 4 columns desktop */
+.sgf__grid{
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 24px;
+}
+
+/* Reusable column */
+.sgf__col h5{
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #e8e8e8;
+}
+.sgf__col ul{
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.sgf__col li{ margin: 6px 0; }
+.sgf a{
+  color: #e8e8e8;
+  text-decoration: none;
+}
+.sgf a:hover{
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* Brand column: logo above text */
+.sgf__brandCol{
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
+}
+.sgf__about{
+  margin: 12px 0 0;
+  color: var(--muted);
+}
+
+/* Logo wrapper reserves space; image is scaled visually */
+.sgf__logo{
+  height: var(--logo-h);       /* layout space (text sits below this) */
+  line-height: 0;
+}
+.sgf__logoImg{
+  height: var(--logo-h);
+  width: auto;
+  display: block;
+  transform: scale(var(--logo-scale));
+  transform-origin: left bottom; 
+}
+
+/* Bottom bar */
+.sgf__bottom{
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sgf__bottom small{ color: var(--muted); }
+
+/* Socials */
+.sgf__socials{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sgf__icon{
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+
+/* Responsive */
+@media (max-width: 900px){
+  .sgf__grid{ grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 560px){
+  .sgf__grid{ grid-template-columns: 1fr; }
+  .sgf__bottom{ flex-direction: column; align-items: flex-start; }
+  .sgf{ --logo-scale: 1.15; }
+}

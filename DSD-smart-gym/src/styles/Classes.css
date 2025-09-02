@@ -82,7 +82,6 @@
 }
 /* Classes page container */
 .classes-page {
-  background: #16181b;
   min-height: 100vh;
   padding-top: calc(var(--nav-h, 80px) + 8px);
 }

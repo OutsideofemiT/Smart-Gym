@@ -1,9 +1,11 @@
-import React from "react";
+import * as React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 // Layouts
 import NonMemberLayout from "./layout/NonMemberLayout";
-import MemberLayout from "./layout/memberLayout";
+import MemberLayout from "./layout/memberLayout"; 
+import Footer from "./layout/Footer";
+
 
 // Pages
 import Homepage from "./pages/Homepage";
@@ -12,10 +14,16 @@ import Classes from "./pages/Classes";
 import CafeOrdering from "./pages/CafeOrdering";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminClasses from "./pages/AdminClasses";
-import AboutUs from "./pages/AboutUs"; // if you want public About Us
+import Membership from "./pages/Membership";
+import JoinToday from "./components/join/JoinToday";
+import MemberProfile from "./pages/memberProfile";
 
-// Global Footer
-import Footer from "./layout/footer";
+
+import '../src/App.css';
+
+
+
+
 
 // ------- Auth helpers -------
 const isAuthed = () => !!localStorage.getItem("authToken");
@@ -36,88 +44,47 @@ function RequireAdminOrTrainer({ children }: { children: React.ReactNode }) {
 // Public nav items
 const nonMemberNav = [
   { label: "Home", to: "/" },
-  { label: "About Us", to: "/nonmember/aboutus" },
+  { label: "Membership", to: "/nonmember/membership" },
   { label: "Classes", to: "/nonmember/classes" },
+  { label: "Join Today", to: "/nonmember/join" },
 ];
-
 const adminNav = [{ label: "Dashboard", to: "/admin/dashboard" }];
 
 export default function App() {
-
   return (
     <>
       <Routes>
-        {/* ---------- Public / Non-Member routes ---------- */}
+        {/* ---------- Public / Non-Member routes (with NonMember layout) ---------- */}
         <Route element={<NonMemberLayout navItems={nonMemberNav} />}>
-          <Route path="/" element={<Homepage />} />
-          <Route path="/nonmember/aboutus" element={<AboutUs />} />
-          <Route path="/nonmember/classes" element={<Classes />} />
+          <Route index element={<Homepage />} />
+          <Route path="nonmember/membership" element={<Membership />} />
+          <Route path="nonmember/classes" element={<Classes />} />
+          <Route path="nonmember/join" element={<JoinToday />} />
         </Route>
 
-        {/* ---------- Members ---------- */}
-        <Route
-          path="/member"
-          element={
-            <RequireAuth>
-              <MemberLayout>
-                <MemberPortal />
-              </MemberLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/member/classes"
-          element={
-            <RequireAuth>
-              <MemberLayout>
-                <Classes />
-              </MemberLayout>
-            </RequireAuth>
-          }
-        />
-        <Route
-          path="/member/cafe-ordering"
-          element={
-            <RequireAuth>
-              <MemberLayout>
-                <CafeOrdering />
-              </MemberLayout>
-            </RequireAuth>
-          }
-        />
-
-        {/* Aliases for backward compatibility */}
-        <Route path="/user" element={<Navigate to="/member" replace />} />
-        <Route path="/classes" element={<Navigate to="/member/classes" replace />} />
-        <Route path="/cafe" element={<Navigate to="/member/cafe-ordering" replace />} />
-
-        {/* ---------- Admin / Trainer ---------- */}
-        <Route element={<NonMemberLayout navItems={adminNav} />} >
-          <Route
-            path="/admin/dashboard"
-            element={
-              <RequireAdminOrTrainer>
-                <AdminDashboard />
-              </RequireAdminOrTrainer>
-            }
-          />
+        {/* ---------- Members (with Member layout) ---------- */}
+        <Route element={<RequireAuth><MemberLayout /></RequireAuth>}>
+          <Route path="member" element={<MemberPortal />} />
+          <Route path="member/classes" element={<Classes />} />
+          <Route path="member/cafe-ordering" element={<CafeOrdering />} />
+          <Route path="member/profile" element={<MemberProfile />} />
         </Route>
 
-          <Route
-            path="/admin/classes"
-            element={
-              <RequireAdminOrTrainer>
-                <AdminClasses />
-              </RequireAdminOrTrainer>
-            }
-          />
-          
+        {/* ---------- Admin / Trainer (reuse NonMember layout, different nav) ---------- */}
+        <Route element={<RequireAdminOrTrainer><NonMemberLayout navItems={adminNav} /></RequireAdminOrTrainer>}>
+          <Route path="admin/dashboard" element={<AdminDashboard />} />
+          <Route path="admin/classes" element={<AdminClasses />} />
+        </Route>
+
+        {/* Aliases / redirects */}
+        <Route path="user" element={<Navigate to="/member" replace />} />
+        <Route path="classes" element={<Navigate to="/member/classes" replace />} />
+        <Route path="cafe" element={<Navigate to="/member/cafe-ordering" replace />} />
+
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-
-      <Footer />
+      <Footer copyrightText={`Smart Gym ${new Date().getFullYear()}`} />
     </>
   );
 }
-

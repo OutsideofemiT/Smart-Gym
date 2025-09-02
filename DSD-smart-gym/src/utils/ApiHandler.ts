@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-const API_BASE_URL = import.meta.env.VITE_API_URL;
 // src/utils/ApiHandler.ts
-
+const API_BASE_URL = import.meta.env.VITE_API_URL as string;
+if (!API_BASE_URL) {
+  // Helpful when local envs aren't wired
+  // (won't crash prod — just a console warning)
+  console.warn("[Api] VITE_API_URL is not set.");
+}
 
 type HeadersMap = { [key: string]: string };
 
@@ -99,6 +103,34 @@ const ApiHandler = {
   },
 
   // ---- Auth ----
+  async signup(name: string, email: string, password: string, gym_id?: string) {
+    const url = join(API_BASE_URL, "/users/signup");
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ name, email, password, ...(gym_id ? { gym_id } : {}) }),
+    });
+
+    const payload = await handleResponse(res);
+
+    const authToken = (payload as any)?.authToken ?? (payload as any)?.token ?? null;
+    const emailOut = (payload as any)?.user?.email ?? (payload as any)?.email ?? "";
+    const roleOut =
+      ((payload as any)?.user?.role ?? (payload as any)?.role ?? "")?.toLowerCase?.() || "";
+    const gymIdOut = (payload as any)?.user?.gym_id ?? (payload as any)?.gym_id ?? "";
+
+    if (!authToken) throw new Error("Sign up succeeded but no authToken returned.");
+
+    localStorage.setItem("authToken", authToken);
+    localStorage.setItem("token", authToken);
+    if (emailOut) localStorage.setItem("email", emailOut);
+    if (roleOut) localStorage.setItem("role", roleOut);
+    if (gymIdOut) localStorage.setItem("gym_id", String(gymIdOut));
+
+    return payload;
+  },
+
   async login(email: string, password: string) {
     const loginUrl = join(API_BASE_URL, "/users/login");
     const res = await fetch(loginUrl, {
@@ -116,10 +148,8 @@ const ApiHandler = {
       null;
 
     const emailOut = (payload as any)?.email ?? (payload as any)?.user?.email ?? "";
-
     const roleRaw = (payload as any)?.role ?? (payload as any)?.user?.role ?? "";
     const roleOut = typeof roleRaw === "string" ? roleRaw.toLowerCase() : "";
-
     const gymIdOut = (payload as any)?.gym_id ?? (payload as any)?.user?.gym_id ?? "";
 
     if (!authToken) throw new Error("Login succeeded but no authToken returned.");
@@ -128,10 +158,22 @@ const ApiHandler = {
     localStorage.setItem("token", authToken);
     if (emailOut) localStorage.setItem("email", emailOut);
     if (roleOut) localStorage.setItem("role", roleOut);
-    if (gymIdOut) localStorage.setItem("gym_id", gymIdOut);
+    if (gymIdOut) localStorage.setItem("gym_id", String(gymIdOut));
 
     return payload;
   },
+
+  async getMyProfile() {
+    return this.get("users/profile");
+  },
+
+  async updateMyProfile(payload: any) {
+    //fetch my id once, then PUT
+    const me = await this.get("users/profile");
+    const id = me?._id || me?.id;
+    if(!id) throw new Error("Could not determine your user id");
+    return this.put(`/users/${encodeURIComponent(id)}`, payload);
+ },
 
   // ---- Classes (Admin) ----
   async getAdminClasses() {

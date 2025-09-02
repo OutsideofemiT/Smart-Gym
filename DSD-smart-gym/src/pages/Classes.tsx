@@ -1,4 +1,4 @@
-import React from "react";
+import * as React from "react";
 import cycling from "../assets/cycling-class.png";
 import boxing from "../assets/boxing-class.jpg";
 import yoga from "../assets/yoga-class.png";
@@ -54,7 +54,6 @@ const Classes: React.FC = () => {
 
   return (
     <>
-      <div>
         {/* HERO (fills viewport under fixed navbar, no black band) */}
         <div
           className="classes-hero"
@@ -68,7 +67,6 @@ const Classes: React.FC = () => {
         {showCalendar && <Calendar />}
 
         <ClassesTabs />
-      </div>
     </>
   );
 };

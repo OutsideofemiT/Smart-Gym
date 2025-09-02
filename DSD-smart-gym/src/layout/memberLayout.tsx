@@ -1,24 +1,24 @@
-import React from 'react';
-import MemberNavbar from './memberNavbar';
-import type { MemberNavItem } from './memberNavbar'; 
-
-interface MemberLayoutProps {
-  children: React.ReactNode;
-}
+import React from "react";
+import { Outlet } from "react-router-dom";
+import MemberNavbar from "./memberNavbar";
+import type { MemberNavItem } from "./memberNavbar";
 
 const navItems: MemberNavItem[] = [
   { label: "Home", to: "/member" },
   { label: "Classes", to: "/member/classes" },
   { label: "Cafe", to: "/member/cafe-ordering" },
-  { label: "Log Out", action: "logout" },
+  { label: "Profile", to: "/member/profile"},
+   { label: "Log Out", action: "logout" },
 ];
 
-const MemberLayout: React.FC<MemberLayoutProps> = ({ children }) => {
+const MemberLayout: React.FC = () => {
   return (
-    <>
+    <div className="app-shell">
       <MemberNavbar navItems={navItems} />
-      <main>{children}</main>
-    </>
+      <main className="app-main">
+        <Outlet />
+      </main>
+    </div>
   );
 };
 

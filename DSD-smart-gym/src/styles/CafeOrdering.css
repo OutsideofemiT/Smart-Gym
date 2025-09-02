@@ -3,6 +3,7 @@
   --text: #ffffff;
   --text-muted: #bdbdbd;
   --divider: rgba(255,255,255,0.12);
+  --nav-h: 80px; /* fixed navbar height */
 }
 
 html, body { overflow-x: hidden; }
@@ -10,13 +11,16 @@ html, body { overflow-x: hidden; }
 .cafe-page {
   color: var(--text);
   line-height: 1.35;
-  background: transparent;
+  background: #0e1114; 
+  background: transparent; 
   padding-top: clamp(40vh, 52vh, 520px);
 }
+
 
 /* ===== HERO ===== */
 .cafe-hero.full-bleed {
   position: absolute !important;
+  top: 0;                 /* ✅ anchor to top so no gap above hero */
   width: 100vw !important;
   left: 50% !important;
   margin-left: -50vw !important;
@@ -24,6 +28,7 @@ html, body { overflow-x: hidden; }
 }
 
 .cafe-hero {
+  position: relative;     /* anchor ::before overlay */
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -97,7 +102,7 @@ html, body { overflow-x: hidden; }
   flex: 3;
 }
 
-/* ===== PRODUCT CARD (image left, info right) ===== */
+/* ===== PRODUCT CARD ===== */
 .cafe-row-line {
   display: flex;
   flex-direction: row;
@@ -123,9 +128,7 @@ html, body { overflow-x: hidden; }
   justify-content: center;
 }
 
-.line-top {
-  margin-bottom: 8px;
-}
+.line-top { margin-bottom: 8px; }
 
 .item-name {
   font-size: 20px;
@@ -162,7 +165,7 @@ html, body { overflow-x: hidden; }
   border-radius: 10px;
   padding: 20px;
   position: sticky;
-  top: 2rem;
+  top: calc(var(--nav-h) + 16px); /* sits below the fixed navbar */
   margin-left: 2rem;
   align-self: flex-start;
 }
@@ -216,23 +219,20 @@ html, body { overflow-x: hidden; }
 
 .cart-remove-x {
   margin-left: 8px;
-  color: #C4F500; /* lime green */
+  color: #C4F500;
   font-weight: bold;
   font-size: 1.2rem;
   cursor: pointer;
   transition: color 0.2s ease;
 }
+.cart-remove-x:hover { color: #a0c700; }
 
-.cart-remove-x:hover {
-  color: #a0c700; /* darker lime on hover */
-}
 .cart-price-wrapper {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
 }
-
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 720px) {

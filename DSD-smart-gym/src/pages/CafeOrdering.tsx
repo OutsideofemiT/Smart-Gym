@@ -36,7 +36,7 @@ function getImageForItem(name: string): string | undefined {
   return IMAGE_MAP[name.trim().toLowerCase()];
 }
 
-// 🔑 separate keys so the browsing cart can't clobber the checkout snapshot
+
 const CART_KEY = "smartGymCart";
 const SNAPSHOT_KEY = "smartGymCartSnapshot";
 
@@ -87,8 +87,7 @@ const CafeOrdering: React.FC = () => {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
   }, [cart, showReceipt]);
 
-  // ✅ On success: read SNAPSHOT first; then clear everything and show receipt
-  // ✅ On success: read SNAPSHOT first; then clear everything and show receipt
+  // On success: read SNAPSHOT first; then clear everything and show receipt
 useEffect(() => {
   if (!isSuccess || finalizedRef.current) return;
   finalizedRef.current = true;
