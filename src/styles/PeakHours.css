@@ -8,9 +8,9 @@
 
 .heatmap-container {
   display: flex;
-  /* align-items: center; */
   justify-content: center;
   column-gap: 50px;
+  margin-top: 15px;
 }
 
 #peak-hours-title {
