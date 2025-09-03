@@ -74,6 +74,19 @@
   justify-items: stretch;
 }
 
+.comparison-table-title {
+  position: sticky;
+  left: 5%;
+}
+
+.comparison-table-scroll {
+  padding-bottom: 20px;
+}
+
+.comparison-table-data {
+  margin: 0 auto;
+}
+
 .comparison-table th {
   padding: 0 15px;
 }
