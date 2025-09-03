@@ -7,14 +7,6 @@
   background-color: #bcfd4c;
 }
 
-.dashboard-header {
-  text-align: center;
-  margin-bottom: 50px;
-  font-size: 4rem;
-  font-weight: bold;
-  font-family: "Courier New", Courier, monospace;
-}
-
 .analytics-container {
   margin-bottom: 40px;
   display: flex;
@@ -28,11 +20,15 @@
 }
 
 .admin-dashboard-main {
-  transform: scale(.82) translateX(80px) translateY(-180px);
+  transform: scale(0.82) translateX(80px) translateY(-180px);
+}
+
+.admin-dashboard-main > .inventory-management-container {
+  transform: translateY(-65px);
 }
 
 .admin-classes-view > .admin-dashboard-body > .admin-dashboard-main {
-  transform: scale(0.72) translateX(80px) translateY(-220px);
+  transform: scale(0.72) translateX(80px) translateY(-208px);
   border-radius: 5%;
   box-shadow: rgba(0, 0, 0, 0.568) 0px 5px 100px;
 }
