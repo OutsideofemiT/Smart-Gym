@@ -4,7 +4,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // Layouts
 import NonMemberLayout from "./layout/NonMemberLayout";
 import MemberLayout from "./layout/memberLayout"; 
-import Footer from "./layout/Footer";
+import Footer from "./layout/footer";
+
 
 
 // Pages
@@ -41,6 +42,9 @@ function RequireAdminOrTrainer({ children }: { children: React.ReactNode }) {
   return isAdminOrTrainer() ? <>{children}</> : <Navigate to="/member" replace />;
 }
 
+
+
+
 // Public nav items
 const nonMemberNav = [
   { label: "Home", to: "/" },
@@ -68,6 +72,7 @@ export default function App() {
           <Route path="member/classes" element={<Classes />} />
           <Route path="member/cafe-ordering" element={<CafeOrdering />} />
           <Route path="member/profile" element={<MemberProfile />} />
+          <Route path="member/profile/edit" element={<MemberProfile />} />
         </Route>
 
         {/* ---------- Admin / Trainer (reuse NonMember layout, different nav) ---------- */}

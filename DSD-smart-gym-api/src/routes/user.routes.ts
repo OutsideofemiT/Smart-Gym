@@ -1,5 +1,8 @@
 // src/routes/user.routes.ts
 import express, { Response } from "express";
+import path from "path";
+import fs from "fs";
+import multer from "multer";
 import {
   createUser,
   signUp,
@@ -9,7 +12,8 @@ import {
   login,
   updatePassword,
   updateUser,
-  getMyProfile, // ← use controller instead of inlining DB access
+  getMyProfile,
+  uploadAvatar, // saves avatar_url on the user/profile and returns { avatar_url }
 } from "../controllers/user.controller";
 import { getTrainerClasses } from "../controllers/class.controller";
 import { requireAuth } from "../middleware/requireAuth";
@@ -18,19 +22,41 @@ import { IAuthenticatedRequest } from "../types/interface";
 
 const router = express.Router();
 
-/** Auth */
+/* ---------- Ensure upload dir exists ---------- */
+const avatarDir = path.join(process.cwd(), "uploads", "avatars");
+fs.mkdirSync(avatarDir, { recursive: true });
+
+/* ---------- Multer for avatar upload ---------- */
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, avatarDir),
+  filename: (req, file, cb) => {
+    const uid = (req as IAuthenticatedRequest)?.user?.user_id?.toString?.() ?? "anon";
+    const ext = path.extname(file.originalname || "");
+    cb(null, `u_${uid}_${Date.now()}${ext || ""}`);
+  },
+});
+
+const upload = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB
+  fileFilter: (_req, file, cb) => {
+    // allow common image types; block everything else (including svg for safety)
+    if (/^image\/(png|jpe?g|webp|gif)$/.test(file.mimetype)) return cb(null, true);
+    cb(new Error("Only image files (png/jpg/jpeg/webp/gif) are allowed"));
+  },
+});
+
+/* -------------------- Auth -------------------- */
 router.post("/login", login);
-router.post("/signup", signUp)
-;
-/** Self profile (full doc minus secrets) */
+router.post("/signup", signUp);
+
+/* --------- Current user / profile --------- */
+// Full profile doc (minus secrets)
 router.get("/profile", requireAuth, getMyProfile);
 
-/** Compact current-user info */
+// Compact info (no DB trip)
 router.get("/me", requireAuth, async (req: IAuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-
-  // Keep this lightweight; no DB if you don’t need it.
-  // If you want name too, you can move this into a controller and fetch once from User.
   const { user_id, email, role, gym_id } = req.user;
   return res.status(200).json({
     id: user_id,
@@ -40,7 +66,11 @@ router.get("/me", requireAuth, async (req: IAuthenticatedRequest, res: Response)
   });
 });
 
-/** Trainer-only helper: list classes owned by the authenticated trainer (admins allowed) */
+// Avatar upload (multipart/form-data; field name: "avatar")
+// Returns { avatar_url: string }
+router.post("/profile/avatar", requireAuth, upload.single("avatar"), uploadAvatar);
+
+/* ---- Trainer helper: classes for this trainer (admin ok) ---- */
 router.get(
   "/trainer/mine/list",
   requireAuth,
@@ -48,18 +78,16 @@ router.get(
   getTrainerClasses
 );
 
-/** User management (admin-only for high-risk ops) */
+/* ----------------- Admin / management ----------------- */
 router.post("/", requireAuth, requireRole(["admin"]), createUser);
 router.get("/", requireAuth, requireRole(["admin"]), fetchAllUsers);
 
-/** Admin: user by id */
+// Admin: user by id
 router.get("/:id", requireAuth, requireRole(["admin"]), fetchUserById);
 
-/** Update/delete by id (updateUser enforces admin-or-self) */
+// Update / delete by id (updateUser enforces admin-or-self)
 router.put("/:id", requireAuth, updateUser);
 router.put("/:id/password", requireAuth, updatePassword);
 router.delete("/:id", requireAuth, requireRole(["admin"]), deleteUser);
-
-
 
 export default router;

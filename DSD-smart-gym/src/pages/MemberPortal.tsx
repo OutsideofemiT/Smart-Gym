@@ -10,6 +10,7 @@ import HeroImage from "../assets/SG_MP_Hero.png";
 import ClassesImage from "../assets/SG_Classes.png";
 
 import "../styles/DashboardTile.css";
+import "../styles/QRModal.css";
 
 const MemberPortal: React.FC = () => {
   const navigate = useNavigate();

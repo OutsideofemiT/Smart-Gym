@@ -1,35 +1,35 @@
-/* Navbar */
+/* ===== Navbar shell ===== */
 .member-navbar {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
-  background-color: rgba(110, 110, 110, 0.2);
-  padding: 1.5rem 0;
   height: 80px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  z-index: 1000;
+  background-color: rgba(110,110,110,0.2);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  overflow: visible;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1000;
 }
 
-/* Container */
 .member-navbar-container {
   max-width: 1200px;
   width: 100%;
+  height: 100%;
   margin: 0 auto;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   padding: 0 20px;
   box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
-
+/* ===== Left: logo (big, won’t block clicks) ===== */
 .member-navbar-left {
   position: relative;
-  width: 80px;
+  width: 140px;      /* reserve space so it never overlaps links */
+  height: 100%;
 }
 
 .member-logo-img {
@@ -37,19 +37,18 @@
   top: 40%;
   left: 50%;
   transform: translate(-50%, -50%);
-  height: 150px; 
+  height: 150px;     /* big logo */
   width: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none; /* make it “non-clickable” so it can’t intercept clicks */
 }
 
-
-.member-navbar-text {
-  display: none;
-}
-
-
+/* ===== Right: links ===== */
 .member-nav-links {
   display: flex;
-  gap: 1.5rem;
+  align-items: center;
+  gap: 1.25rem;
   list-style: none;
   margin: 0;
   padding: 0;
@@ -65,13 +64,81 @@
   color: #bcfd4c;
   font-size: 1rem;
   font-weight: 500;
-  padding: 5px 10px;
-  transition: color 0.3s ease, background-color 0.3s ease;
-  border-radius: 4px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: color .2s ease, background-color .2s ease;
 }
 
 .member-nav-links a:hover {
-  background-color: rgba(188, 253, 76, 0.2);
-  color: #ffffff;
+  background-color: rgba(188,253,76,0.2);
+  color: #fff;
 }
 
+/* ===== Profile dropdown ===== */
+.nav-dropdown {
+  position: relative;
+}
+
+.dropdown-btn {
+  background: transparent;
+  border: 1px solid rgba(188,253,76,0.4);
+  color: #bcfd4c;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.dropdown-btn:hover {
+  background-color: rgba(188,253,76,0.2);
+  color: #fff;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  min-width: 180px;
+  background: #1f1f1f;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+  z-index: 1500; /* above navbar */
+}
+
+.dropdown-menu a {
+  color: #e6e6e6;
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.dropdown-menu a:hover {
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+}
+
+/* ===== Logout button (scoped to NAV only) ===== */
+.nav-logout-button {
+  background: #ff4d4d;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background .2s ease;
+}
+
+.nav-logout-button:hover {
+  background: #e60000;
+}
+.member-nav-links .nav-dropdown { position: relative; }
+.member-nav-links .dropdown-menu {
+  position: absolute;
+  top: 42px;
+  right: 0;
+  z-index: 1500;  /* below the profile modal (2000), above navbar */
+}

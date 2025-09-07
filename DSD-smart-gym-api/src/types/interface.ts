@@ -50,7 +50,11 @@ export interface IJwtPayload extends JwtPayload {
 /** What we attach to req.user for downstream handlers */
 export interface IAuthenticatedUser {
   /** Canonical user id (Mongo ObjectId) */
-  user_id: string;
+  user_id?: string;
+  /** New JWT structure uses sub for user ID */
+  sub?: string;
+  /** MongoDB _id field */
+  _id?: string;
   email?: string;
   role?: UserRole;
   gym_id?: string;
