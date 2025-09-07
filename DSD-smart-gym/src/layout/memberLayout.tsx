@@ -2,6 +2,8 @@ import React from "react";
 import { Outlet } from "react-router-dom";
 import MemberNavbar from "./memberNavbar";
 import type { MemberNavItem } from "./memberNavbar";
+import Footer from "../layout/footer";
+
 
 const navItems: MemberNavItem[] = [
   { label: "Home", to: "/member" },
@@ -18,6 +20,7 @@ const MemberLayout: React.FC = () => {
       <main className="app-main">
         <Outlet />
       </main>
+       <Footer />
     </div>
   );
 };

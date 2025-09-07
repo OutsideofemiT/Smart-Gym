@@ -60,11 +60,15 @@ const Homepage: React.FC = () => {
       setEmail("");
       setPassword("");
 
-      if (role === "admin" || role === "trainer") {
+      if (role === "admin" ) {
         navigate("/admin/dashboard", { replace: true });
       } else {
         navigate("/member", { replace: true });
       }
+        if (role === "trainer" ) {
+          navigate ("/admin/classes", { replace: true});
+        }
+      
     } catch (err: any) {
       console.error("Login error:", err);
       setMessage(`❌ Login failed: ${err?.message || "Unknown error"}`);

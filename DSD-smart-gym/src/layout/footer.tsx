@@ -1,14 +1,26 @@
+// src/components/Footer.tsx
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { SocialIcon } from "react-social-icons";
 import "../styles/Footer.css";
 import Logo from "../assets/SG_Icon2.png";
 
 interface FooterProps {
   copyrightText?: string;
+  /** Optional manual override to hide the footer */
+  forceHide?: boolean;
 }
 
-const Footer: React.FC<FooterProps> = ({ copyrightText = "Smart Gym 2025" }) => {
+const Footer: React.FC<FooterProps> = ({ copyrightText = "Smart Gym 2025", forceHide }) => {
+  const { pathname } = useLocation();
+
+  // ❗ Hide ONLY on admin routes. Shows on all frontend/member pages.
+  // If your admin base path is different, adjust the regex.
+  const isAdminRoute = /^\/admin(\/|$)/i.test(pathname);
+  const hideFooter = !!forceHide || isAdminRoute;
+
+  if (hideFooter) return null;
+
   return (
     <footer className="sgf">
       <div className="sgf__wrap">

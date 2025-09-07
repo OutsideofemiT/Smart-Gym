@@ -1,3 +1,4 @@
+// src/pages/AdminClasses.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import ApiHandler from "../utils/ApiHandler";
 import Calendar from "../components/classes/calendar";
@@ -11,24 +12,26 @@ type GymClass = {
   description: string;
   trainer_id: string;
   gym_id: string;
-  date: string;
-  start_time: string;
-  end_time: string;
+  start_time: string; // ISO Date string from new API
+  end_time: string;   // ISO Date string from new API
   attendees?: number;
   capacity: number;
   canceled?: boolean;
   cancel_reason?: string;
   canceled_at?: string;
+  // Legacy support (some components may still expect these)
+  date?: string;
+  booked_count?: number;
 };
 
 type FormState = {
   title: string;
   description: string;
-  trainer_id: string;
+  trainer_id: string; // admin can type trainer email or _id; trainers ignored (JWT used)
   gym_id: string;
-  date: string;
-  start_time: string;
-  end_time: string;
+  date: string;       // YYYY-MM-DD
+  start_time: string; // HH:mm
+  end_time: string;   // HH:mm (optional if duration used)
   duration_minutes: number;
   capacity: number;
 };
@@ -64,16 +67,12 @@ function computeEndFromStart(startHHmm: string, minutes: number): string {
   return `${pad2(end.getHours())}:${pad2(end.getMinutes())}`;
 }
 function ymd(dateLike: string) { return dateLike.slice(0, 10); }
-function sameDayTimes(dateLike: string, startHHmm: string, endHHmm: string) {
-  const [y, m, d] = ymd(dateLike).split("-").map(Number);
-  const mk = (hm: string) => {
-    const [h, mi] = hm.split(":").map(Number);
-    return new Date(y, (m - 1), d, h || 0, mi || 0, 0, 0);
-  };
-  return { start: mk(startHHmm), end: mk(endHHmm) };
-}
+
 function toEvent(row: GymClass): CalendarEvent {
-  const { start, end } = sameDayTimes(row.date, row.start_time, row.end_time);
+  // Handle new API format where start_time and end_time are Date objects
+  const start = row.start_time ? new Date(row.start_time) : new Date();
+  const end = row.end_time ? new Date(row.end_time) : new Date(start.getTime() + 60 * 60 * 1000); // 1 hour default
+  
   return {
     id: row._id,
     title: row.title,
@@ -124,10 +123,14 @@ const AdminClasses: React.FC = () => {
     }
   };
 
-  useEffect(() => { fetchClasses(); /* eslint-disable-next-line */ }, [gymId]);
+  useEffect(() => { fetchClasses(); /* eslint-disable-line */ }, [gymId]);
 
   const sorted = useMemo(
-    () => [...rows].sort((a, b) => `${ymd(a.date)} ${a.start_time}`.localeCompare(`${ymd(b.date)} ${b.start_time}`)),
+    () => [...rows].sort((a, b) => {
+      const aTime = a.start_time ? new Date(a.start_time).getTime() : 0;
+      const bTime = b.start_time ? new Date(b.start_time).getTime() : 0;
+      return aTime - bTime;
+    }),
     [rows]
   );
   const events: CalendarEvent[] = useMemo(() => sorted.map(toEvent), [sorted]);
@@ -139,15 +142,23 @@ const AdminClasses: React.FC = () => {
   };
 
   const startEdit = (c: GymClass) => {
+    // Extract date and time from the new Date objects
+    const startDate = c.start_time ? new Date(c.start_time) : new Date();
+    const endDate = c.end_time ? new Date(c.end_time) : new Date();
+    
+    const dateStr = startDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    const startTimeStr = startDate.toTimeString().slice(0, 5); // HH:MM
+    const endTimeStr = endDate.toTimeString().slice(0, 5); // HH:MM
+
     setEditingId(c._id);
     setForm({
       title: c.title,
       description: c.description,
       trainer_id: c.trainer_id,
       gym_id: c.gym_id,
-      date: ymd(c.date),
-      start_time: c.start_time,
-      end_time: c.end_time,
+      date: dateStr,
+      start_time: startTimeStr,
+      end_time: endTimeStr,
       duration_minutes: 60,
       capacity: c.capacity,
     });
@@ -160,6 +171,7 @@ const AdminClasses: React.FC = () => {
   };
 
   const save = async () => {
+    // Basic validation
     if (!form.title.trim()) return setError("Title is required");
     if (!form.description.trim()) return setError("Description is required");
     if (!form.gym_id.trim()) return setError("gym_id is required");
@@ -167,39 +179,50 @@ const AdminClasses: React.FC = () => {
     if (!form.start_time) return setError("Start time is required");
     if (!form.capacity || form.capacity < 1) return setError("Capacity must be ≥ 1");
 
-    const trainer_id_final = isTrainer ? email : form.trainer_id.trim();
-    if (!trainer_id_final) return setError("Trainer ID is required");
+    const trainer_id_final = isTrainer ? email : form.trainer_id.trim(); // admins can type trainer email/_id
+    if (isAdmin && !trainer_id_final) return setError("Trainer ID is required");
 
+    // compute end HH:mm if duration provided
     let endHHmm = form.end_time;
     if (form.duration_minutes && form.duration_minutes > 0) {
       endHHmm = computeEndFromStart(form.start_time, form.duration_minutes);
-    } else if (!endHHmm) {
-      return setError("End time is required if no duration provided");
     }
-
-    const { start, end } = sameDayTimes(form.date, form.start_time, endHHmm);
-    if (end <= start) return setError("End time must be after start time");
-
-    const payload = {
-      title: form.title,
-      description: form.description,
-      trainer_id: trainer_id_final,
-      gym_id: form.gym_id,
-      date: ymd(form.date),
-      start_time: form.start_time,
-      end_time: endHHmm,
-      capacity: form.capacity,
-    };
 
     try {
       setLoading(true);
       setError(null);
+
       if (editingId) {
-        await ApiHandler.put(`/classes/${editingId}`, payload);
+        // UPDATE SESSION: only send fields the backend accepts in updateSession
+        const update: any = { capacity: form.capacity };
+
+        // time changes require both date + start_time; end_time optional if provided
+        if (form.date && form.start_time) {
+          update.date = ymd(form.date);
+          update.start_time = form.start_time;
+          if (endHHmm) update.end_time = endHHmm;
+        }
+
+        // optional: mirror description to notes
+        if (form.description?.trim()) update.notes = form.description.trim();
+
+        await ApiHandler.updateClass(editingId, update);
       } else {
-        const id = (crypto as any)?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
-        await ApiHandler.post(`/classes`, { _id: id, ...payload, attendees: 0 });
+        // CREATE SESSION
+        const payload = {
+          title: form.title,
+          description: form.description,
+          trainer_id: isAdmin ? trainer_id_final : "", // server ignores for trainers
+          gym_id: form.gym_id,
+          date: ymd(form.date),
+          start_time: form.start_time,
+          end_time: endHHmm, // or omit and rely on duration/defaults
+          duration_minutes: form.duration_minutes || undefined,
+          capacity: form.capacity,
+        };
+        await ApiHandler.createSession(payload);
       }
+
       setShowForm(false);
       await fetchClasses();
     } catch (e: any) {
@@ -217,7 +240,7 @@ const AdminClasses: React.FC = () => {
     if (!cancelModal.id) return;
     try {
       setBusyId(cancelModal.id);
-      await ApiHandler.put(`/classes/${cancelModal.id}/cancel`, { reason: cancelModal.reason });
+      await ApiHandler.cancelClass(cancelModal.id, cancelModal.reason);
       closeCancelModal();
       await fetchClasses();
     } catch (e: any) {
@@ -231,7 +254,7 @@ const AdminClasses: React.FC = () => {
   const uncancel = async (id: string) => {
     try {
       setBusyId(id);
-      await ApiHandler.put(`/classes/${id}/uncancel`, {});
+      await ApiHandler.uncancelClass(id);
       await fetchClasses();
     } catch (e: any) {
       console.error(e);
@@ -246,7 +269,7 @@ const AdminClasses: React.FC = () => {
     try {
       setBusyId(id);
       setRows((prev) => prev.filter((c) => c._id !== id)); // optimistic UI
-      const res = await ApiHandler.delete(`/classes/${id}`);
+      const res = await ApiHandler.deleteClass(id);
       if ((res as any)?.error) {
         await fetchClasses(); // revert if server failed
         setError((res as any).error || "Delete failed");
@@ -311,9 +334,9 @@ const AdminClasses: React.FC = () => {
                   </td>
                   <td>{c.trainer_id}</td>
                   <td>{c.capacity}</td>
-                  <td>{new Date(ymd(c.date)).toLocaleDateString()}</td>
-                  <td>{c.start_time}</td>
-                  <td>{c.end_time}</td>
+                  <td>{c.start_time ? new Date(c.start_time).toLocaleDateString() : 'N/A'}</td>
+                  <td>{c.start_time ? new Date(c.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</td>
+                  <td>{c.end_time ? new Date(c.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'N/A'}</td>
                   <td>
                     {c.canceled ? "Canceled" : "Scheduled"}
                     {c.canceled && c.cancel_reason ? (
@@ -368,7 +391,7 @@ const AdminClasses: React.FC = () => {
                   value={form.trainer_id}
                   onChange={onChange}
                   readOnly={isTrainer}
-                  placeholder={isTrainer ? "Your email (locked)" : ""}
+                  placeholder={isTrainer ? "Your email (locked)" : "trainer email or _id"}
                 />
               </label>
               <label>Gym ID<input name="gym_id" value={form.gym_id} onChange={onChange} /></label>

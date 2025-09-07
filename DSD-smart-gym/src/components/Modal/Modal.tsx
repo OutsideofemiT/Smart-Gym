@@ -1,26 +1,9 @@
+// src/components/Modal/Modal.tsx
 import React from "react";
 import "../../styles/CalendarModal.css";
+import type { UIMemberClass } from "../../types/Classes"; // <- adjust path if needed
 
-interface MemberClass {
-  waitlistCount: number;
-  title: string;
-  date: string; // YYYY-MM-DD
-  time: string; // HH:mm
-  capacity: number;
-  attendees: number;
-  waitlist: number;
-  description?: string;
-  start_time?: string;
-  end_time?: string;
-  durationMinutes?: number;
-  _id?: string;
-  waitlisted?: boolean;
-  trainer_id?: string;
-  canceled?: boolean;
-  cancel_reason?: boolean;
-};
-
-interface ModalProps {
+type ModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: () => void;
@@ -29,8 +12,9 @@ interface ModalProps {
   classTitle: string;
   waitlistLength?: number;
   classId?: string | number;
-  userClasses?: MemberClass[];
-}
+  /** We only need ids to know if already joined; passing full objects is fine too */
+  userClasses?: Array<Pick<UIMemberClass, "id">>;
+};
 
 const Modal: React.FC<ModalProps> = ({
   isOpen,
@@ -40,18 +24,13 @@ const Modal: React.FC<ModalProps> = ({
   mode,
   classTitle,
   waitlistLength,
-  userClasses = [],
   classId,
+  userClasses = [],
 }) => {
   if (!isOpen) return null;
 
-  const waitListedClasses = userClasses
-    .filter((cls) => cls.waitlisted)
-    .map((cls) => cls._id);
-
-  const idClass = classId?.toString() || "";
-  const matches = waitListedClasses.some((id) => id === idClass);
-  const alreadyJoined = userClasses.some((cls) => cls._id === idClass);
+  const idClass = (classId ?? "").toString();
+  const alreadyJoined = userClasses.some((cls) => String(cls.id) === idClass);
 
   return (
     <div className="modal-overlay">
@@ -62,16 +41,11 @@ const Modal: React.FC<ModalProps> = ({
             : `${classTitle} is Full — Join Waitlist`}
         </h2>
 
-        {mode === "waitlist" ? (
+        {mode === "waitlist" && (
           <p className="modal-waitlist-text">
-            Current waitlist length: <strong>{waitlistLength}</strong>
+            Current waitlist length: <strong>{waitlistLength ?? 0}</strong>
           </p>
-        ) : matches ? (
-          <p className="modal-waitlist-text">
-            You are currently on the waitlist <br />
-            Current waitlist length: <strong>{waitlistLength}</strong>
-          </p>
-        ) : null}
+        )}
 
         <div className="modal-actions">
           <button onClick={onClose} className="modal-button modal-cancel">
@@ -83,18 +57,19 @@ const Modal: React.FC<ModalProps> = ({
             onClick={onSubmit}
             className="modal-button modal-submit"
             disabled={alreadyJoined}
+            title={alreadyJoined ? "You're already booked." : undefined}
           >
             {mode === "signup" ? "Sign Up" : "Join Waitlist"}
           </button>
 
-          {/* Leave Class button only shows if user is signed up */}
-          {mode === "signup" && onLeave && (
+          {/* Leave (works for both booking and waitlist on the backend) */}
+          {onLeave && (
             <button
               onClick={onLeave}
               className="modal-button modal-leave"
               style={{ backgroundColor: "#f87171" }}
             >
-              {matches ? "Leave Waitlist" : "Leave Class"}
+              {mode === "waitlist" ? "Leave Waitlist" : "Leave Class"}
             </button>
           )}
         </div>
