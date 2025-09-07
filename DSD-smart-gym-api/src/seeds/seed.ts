@@ -1,6 +1,6 @@
 // src/seeds/seed.ts
 import crypto from "crypto";
-import { Class } from "../models/class.model";
+import { ClassSession } from "../models/class.model";
 import { Gym } from "../models/gym.model";
 import { User } from "../models/user.model";
 import { CheckInOut } from "../models/access.model";
@@ -56,7 +56,7 @@ async function upsertClass(c: {
   const key = `${c.gym_id}|${c.trainer_id}|${c.title}|${c.start_time}|${c.date.toISOString().slice(0,10)}`;
   const _id = makeObjectId(`class:${key}`);
 
-  await Class.updateOne(
+  await ClassSession.updateOne(
     { _id },
     {
       $setOnInsert: {

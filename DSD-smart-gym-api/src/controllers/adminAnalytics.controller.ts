@@ -1,35 +1,28 @@
 // src/controllers/adminAnalytics.controller.ts
 import { Request, Response } from "express";
 import { User } from "../models/user.model";
-import { Class } from "../models/class.model";
+import { ClassSession } from "../models/class.model";
 import { CheckInOut } from "../models/access.model";
 
 const MONTH_NAME = [
-  "",
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 const WEEKDAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+/* ------------ helpers ------------- */
 async function getMemberYearSpan() {
   const oldest = await User.find({ role: "member" })
     .sort({ createdAt: 1 })
     .limit(1)
-    .select("createdAt");
+    .select("createdAt")
+    .lean();
   const newest = await User.find({ role: "member" })
     .sort({ createdAt: -1 })
     .limit(1)
-    .select("createdAt");
+    .select("createdAt")
+    .lean();
+
   if (!oldest.length) throw new Error("No member data in database");
   return {
     min: new Date(oldest[0].createdAt).getFullYear(),
@@ -37,45 +30,45 @@ async function getMemberYearSpan() {
   };
 }
 
+type YearCount = { year: number; count: number };
+type MonthCount = { year: number; month: number; count: number };
+type MonthlyClassRow = { year: number; month: number; classType: string; count: number };
+
+/* ------------ members: yearly growth ------------- */
 export async function getYearlyMembershipGrowth(req: Request, res: Response) {
   try {
     const { min, max } = await getMemberYearSpan();
 
     const start = parseInt((req.query.startYear as string) ?? `${min}`, 10);
     const end = parseInt((req.query.endYear as string) ?? `${max}`, 10);
-    if (start < min || end > max)
-      return res.status(400).json({ error: "No records" });
+    if (start < min || end > max) return res.status(400).json({ error: "No records" });
 
-    const raw = await User.aggregate([
+    const raw: YearCount[] = await User.aggregate([
       { $match: { role: "member" } },
-      {
-        $group: { _id: { year: { $year: "$createdAt" } }, count: { $sum: 1 } },
-      },
+      { $group: { _id: { year: { $year: "$createdAt" } }, count: { $sum: 1 } } },
       { $project: { _id: 0, year: "$_id.year", count: 1 } },
       { $sort: { year: 1 } },
     ]);
 
-    const data = raw.filter((r) => r.year >= start && r.year <= end);
-    return data.length
-      ? res.json(data)
-      : res.status(400).json({ error: "No records" });
+    const data = raw.filter((r: YearCount) => r.year >= start && r.year <= end);
+    return data.length ? res.json(data) : res.status(400).json({ error: "No records" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
 
+/* ------------ members: monthly growth ------------- */
 export async function getMonthlyMembershipGrowth(req: Request, res: Response) {
   try {
     const { min, max } = await getMemberYearSpan();
 
     let s = parseInt((req.query.startYear as string) ?? `${max}`, 10);
     let e = parseInt((req.query.endYear as string) ?? `${s}`, 10);
-    if (s < min || e > max)
-      return res.status(400).json({ error: "No records" });
+    if (s < min || e > max) return res.status(400).json({ error: "No records" });
     if (s > e) [s, e] = [e, s];
 
-    const raw = await User.aggregate([
+    const raw: MonthCount[] = await User.aggregate([
       {
         $match: {
           role: "member",
@@ -84,60 +77,57 @@ export async function getMonthlyMembershipGrowth(req: Request, res: Response) {
       },
       {
         $group: {
-          _id: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-          },
+          _id: { year: { $year: "$createdAt" }, month: { $month: "$createdAt" } },
           count: { $sum: 1 },
         },
       },
-      {
-        $project: { _id: 0, year: "$_id.year", month: "$_id.month", count: 1 },
-      },
+      { $project: { _id: 0, year: "$_id.year", month: "$_id.month", count: 1 } },
     ]);
 
-    const result: { year: number; data: { month: string; count: number }[] }[] =
-      [];
+    const result: { year: number; data: { month: string; count: number }[] }[] = [];
 
     for (let y = s; y <= e; y++) {
       const months = raw
-        .filter((r) => r.year === y && r.count > 0)
-        .map((r) => ({ month: MONTH_NAME[r.month], count: r.count }))
-        .sort(
-          (a, b) => MONTH_NAME.indexOf(a.month) - MONTH_NAME.indexOf(b.month)
-        );
+        .filter((r: MonthCount) => r.year === y && r.count > 0)
+        .map((r: MonthCount) => ({ month: MONTH_NAME[r.month], count: r.count }))
+        .sort((a, b) => MONTH_NAME.indexOf(a.month) - MONTH_NAME.indexOf(b.month));
       if (months.length) result.push({ year: y, data: months });
     }
 
-    return result.length
-      ? res.json(result.length === 1 ? result[0] : result)
-      : res.status(400).json({ error: "No records" });
+    return result.length ? res.json(result.length === 1 ? result[0] : result)
+                         : res.status(400).json({ error: "No records" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
 
+/* ------------ classes: yearly attendance by type ------------- */
 export async function getYearlyClassAttendance(req: Request, res: Response) {
   try {
-    const { min, max } = await getMemberYearSpan(); // reuse span
+    const { min, max } = await getMemberYearSpan(); // reuse span from members
 
     let s = parseInt((req.query.startYear as string) ?? `${min}`, 10);
     let e = parseInt((req.query.endYear as string) ?? `${max}`, 10);
-    if (s < min || e > max)
-      return res.status(400).json({ error: "No records" });
+    if (s < min || e > max) return res.status(400).json({ error: "No records" });
     if (s > e) [s, e] = [e, s];
 
-    const raw = await Class.aggregate([
+    // NOTE: Uses ClassSession.start_time & booked_count; joins titles from classes
+    const raw = await ClassSession.aggregate([
+      { $match: { start_time: { $gte: new Date(s, 0, 1), $lt: new Date(e + 1, 0, 1) } } },
       {
-        $match: {
-          date: { $gte: new Date(s, 0, 1), $lt: new Date(e + 1, 0, 1) },
+        $lookup: {
+          from: "classes",
+          localField: "class_id",
+          foreignField: "_id",
+          as: "cls",
         },
       },
+      { $unwind: "$cls" },
       {
         $group: {
-          _id: { y: { $year: "$date" }, t: "$title" },
-          count: { $sum: "$attendees" },
+          _id: { y: { $year: "$start_time" }, t: "$cls.title" },
+          count: { $sum: { $ifNull: ["$booked_count", 0] } },
         },
       },
       {
@@ -150,39 +140,43 @@ export async function getYearlyClassAttendance(req: Request, res: Response) {
       { $sort: { year: 1 } },
     ]);
 
-    return raw.length
-      ? res.json(raw.length === 1 ? raw[0] : raw)
-      : res.status(400).json({ error: "No records" });
+    return raw.length ? res.json(raw.length === 1 ? raw[0] : raw)
+                      : res.status(400).json({ error: "No records" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Internal server error" });
   }
 }
 
+/* ------------ classes: monthly attendance by type ------------- */
 export async function getMonthlyClassAttendance(req: Request, res: Response) {
   try {
     const { min, max } = await getMemberYearSpan();
 
     let s = parseInt((req.query.startYear as string) ?? `${max}`, 10);
     let e = parseInt((req.query.endYear as string) ?? `${s}`, 10);
-    if (s < min || e > max)
-      return res.status(400).json({ error: "No records" });
+    if (s < min || e > max) return res.status(400).json({ error: "No records" });
     if (s > e) [s, e] = [e, s];
 
-    const raw = await Class.aggregate([
+    const raw: MonthlyClassRow[] = await ClassSession.aggregate([
+      { $match: { start_time: { $gte: new Date(s, 0, 1), $lt: new Date(e + 1, 0, 1) } } },
       {
-        $match: {
-          date: { $gte: new Date(s, 0, 1), $lt: new Date(e + 1, 0, 1) },
+        $lookup: {
+          from: "classes",
+          localField: "class_id",
+          foreignField: "_id",
+          as: "cls",
         },
       },
+      { $unwind: "$cls" },
       {
         $group: {
           _id: {
-            year: { $year: "$date" },
-            month: { $month: "$date" },
-            title: "$title",
+            year: { $year: "$start_time" },
+            month: { $month: "$start_time" },
+            title: "$cls.title",
           },
-          count: { $sum: "$attendees" },
+          count: { $sum: { $ifNull: ["$booked_count", 0] } },
         },
       },
       {
@@ -194,7 +188,7 @@ export async function getMonthlyClassAttendance(req: Request, res: Response) {
           count: 1,
         },
       },
-      { $sort: { year: 1, month: 1 } },
+      { $sort: { year: 1, month: 1, classType: 1 } },
     ]);
 
     const result: {
@@ -206,8 +200,8 @@ export async function getMonthlyClassAttendance(req: Request, res: Response) {
     for (let y = s; y <= e; y++) {
       for (let m = 1; m <= 12; m++) {
         const classes = raw
-          .filter((r) => r.year === y && r.month === m)
-          .map((r) => ({ classType: r.classType, count: r.count }));
+          .filter((r: MonthlyClassRow) => r.year === y && r.month === m)
+          .map((r: MonthlyClassRow) => ({ classType: r.classType, count: r.count }));
 
         if (classes.length) {
           result.push({
@@ -219,16 +213,17 @@ export async function getMonthlyClassAttendance(req: Request, res: Response) {
       }
     }
 
-    return result.length
-      ? res.json(result)
-      : res.status(400).json({ error: "No records" });
+    return result.length ? res.json(result) : res.status(400).json({ error: "No records" });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: "Internal server error" });
   }
 }
 
-async function peakAgg(start: Date, end: Date) {
+/* ------------ peak hours (unchanged schema) ------------- */
+type PeakRow = { dow: number; hour: number; count: number };
+
+async function peakAgg(start: Date, end: Date): Promise<PeakRow[]> {
   return CheckInOut.aggregate([
     { $match: { checked_in: { $gte: start, $lte: end } } },
     {
@@ -250,7 +245,7 @@ export async function getYearlyPeakHours(_req: Request, res: Response) {
     new Date(Date.UTC(y, 11, 31, 23, 59, 59, 999))
   );
   res.json({
-    peakHours: rows.map((r) => ({
+    peakHours: rows.map((r: PeakRow) => ({
       dayOfWeek: WEEKDAY[r.dow - 1],
       hour: r.hour,
       count: r.count,
@@ -260,14 +255,14 @@ export async function getYearlyPeakHours(_req: Request, res: Response) {
 
 export async function getMonthlyPeakHours(_req: Request, res: Response) {
   const now = new Date();
-  const y = now.getUTCFullYear(),
-    m = now.getUTCMonth();
+  const y = now.getUTCFullYear();
+  const m = now.getUTCMonth();
   const rows = await peakAgg(
     new Date(Date.UTC(y, m, 1)),
     new Date(Date.UTC(y, m + 1, 0, 23, 59, 59, 999))
   );
   res.json({
-    peakHours: rows.map((r) => ({
+    peakHours: rows.map((r: PeakRow) => ({
       dayOfWeek: WEEKDAY[r.dow - 1],
       hour: r.hour,
       count: r.count,

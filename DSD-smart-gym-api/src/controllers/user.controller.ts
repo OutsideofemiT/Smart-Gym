@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 
 import { User } from "../models/user.model";
 import { Gym } from "../models/gym.model";
+import { MemberProfile } from "../models/memberProfile.model";
 import { IAuthenticatedRequest } from "../types/interface";
 import { hashPassword, comparePassword } from "../utils/passwords";
 
@@ -32,8 +33,8 @@ export const createUser = async (req: IAuthenticatedRequest, res: Response) => {
     await User.create({
       email,
       name,
-      password: passwordHash,     // bcrypt hash
-      salt: "bcrypt",             // marker only (not used by bcrypt)
+      password: passwordHash,
+      salt: "bcrypt",
       role,
       gym_id,
     });
@@ -58,7 +59,6 @@ export const login = async (req: Request, res: Response) => {
 
     const email = String(emailRaw).toLowerCase().trim();
 
-    // include password explicitly (select:false in model)
     const user = await User.findOne({ email }).select("+password");
     if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
@@ -108,7 +108,6 @@ export const signUp = async (req: Request, res: Response) => {
 
     const email = String(emailRaw).toLowerCase().trim();
 
-    // Prefer provided gym_id; otherwise use DEFAULT_GYM_ID from env
     const gym_id = gymIdFromBody || process.env.DEFAULT_GYM_ID;
     if (!gym_id || !Types.ObjectId.isValid(gym_id)) {
       return res.status(400).json({ error: "Invalid or missing gym_id." });
@@ -163,18 +162,29 @@ export const signUp = async (req: Request, res: Response) => {
   }
 };
 
-/** Me (safe) */
+/** Me (combined user + member profile) */
 export const getMyProfile = async (req: IAuthenticatedRequest, res: Response) => {
   if (!req.user) return res.status(401).json({ error: "Unauthorized" });
-  const me = await User.findById(req.user.user_id).select("-password -salt");
-  if (!me) return res.status(404).json({ error: "User not found" });
-  return res.json(me);
+
+  const user = await User.findById(req.user.user_id).select("-password -salt").lean();
+  if (!user) return res.status(404).json({ error: "User not found" });
+
+  const profile = await MemberProfile.findOne({
+    user_id: req.user.user_id,
+    gym_id: req.user.gym_id,
+    is_deleted: false,
+  }).lean();
+
+  return res.json({
+    ...user,
+    profile: profile || null,
+  });
 };
 
 /** List users (admin) */
 export const fetchAllUsers = async (_req: IAuthenticatedRequest, res: Response) => {
   try {
-    const allUsers = await User.find(); // password/salt excluded by select:false
+    const allUsers = await User.find();
     return res.status(200).json({ allUsers });
   } catch (error) {
     if (error instanceof MongooseError) {
@@ -202,7 +212,7 @@ export const fetchUserById = async (req: IAuthenticatedRequest, res: Response) =
   }
 };
 
-/** Update user (admin or self) — non-credential fields */
+/** Update user (admin or self) + sync MemberProfile when 'profile' data is provided */
 export const updateUser = async (req: IAuthenticatedRequest, res: Response) => {
   try {
     const { id } = req.params;
@@ -216,14 +226,75 @@ export const updateUser = async (req: IAuthenticatedRequest, res: Response) => {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    const { password, salt, ...safeBody } = req.body || {};
-    const updatedUser = await User.findByIdAndUpdate(id, safeBody, {
+    const {
+      password,
+      salt,
+      profile: profileBody,
+      first_name,
+      last_name,
+      // ignore sensitive fields if sent
+      role: _role,
+      gym_id: _gym_id,
+      ...safeUserBody
+    } = req.body || {};
+
+    // Update User (name/email etc.)
+    const updatedUser = await User.findByIdAndUpdate(id, safeUserBody, {
       new: true,
       runValidators: true,
     }).select("-password -salt");
 
     if (!updatedUser) return res.status(404).json({ error: "User not found" });
-    return res.status(200).json({ updatedUser });
+
+    // Build MemberProfile update
+    const setProfile: any = {};
+    if (typeof first_name === "string") setProfile.first_name = first_name.trim();
+    if (typeof last_name === "string") setProfile.last_name = last_name.trim();
+
+    if (profileBody && typeof profileBody === "object") {
+      if (profileBody.phone_e164) setProfile.phone_e164 = String(profileBody.phone_e164);
+      if (profileBody.address) setProfile.address = profileBody.address;
+      if (profileBody.avatar_url) setProfile.avatar_url = String(profileBody.avatar_url);
+      if (typeof profileBody.marketing_op_in === "boolean")
+        setProfile.marketing_op_in = profileBody.marketing_op_in;
+      if (profileBody.communication_prefs)
+        setProfile.communication_prefs = profileBody.communication_prefs;
+      if (Array.isArray(profileBody.class_preferences))
+        setProfile.class_preferences = profileBody.class_preferences;
+      if (typeof profileBody.injury_notes === "string")
+        setProfile.injury_notes = profileBody.injury_notes.trim();
+      if (profileBody.home_location_id && Types.ObjectId.isValid(profileBody.home_location_id))
+        setProfile.home_location_id = new Types.ObjectId(profileBody.home_location_id);
+      // membership_* fields are not user-editable; ignore if present
+    }
+
+    if (Object.keys(setProfile).length > 0) {
+      await MemberProfile.findOneAndUpdate(
+        { user_id: new Types.ObjectId(id), gym_id: req.user?.gym_id, is_deleted: false },
+        {
+          $set: setProfile,
+          $setOnInsert: {
+            user_id: new Types.ObjectId(id),
+            gym_id: req.user?.gym_id,
+            membership_status: "active",
+            join_date: new Date(),
+          },
+        },
+        { new: true, upsert: true }
+      );
+    }
+
+    // Return combined view
+    const combinedProfile = await MemberProfile.findOne({
+      user_id: updatedUser._id,
+      gym_id: req.user?.gym_id,
+      is_deleted: false,
+    }).lean();
+
+    return res.status(200).json({
+      ...updatedUser.toObject(),
+      profile: combinedProfile || null,
+    });
   } catch (error) {
     if (error instanceof MongooseError) {
       return res.status(400).json({ error: error.message });
@@ -282,4 +353,28 @@ export const deleteUser = async (req: IAuthenticatedRequest, res: Response) => {
     }
     return res.status(500).json("Internal server error");
   }
+};
+
+/** Avatar upload — expects multer.single("avatar") on the route */
+export const uploadAvatar = async (req: IAuthenticatedRequest, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+
+  const avatar_url = `${req.protocol}://${req.get("host")}/uploads/avatars/${req.file.filename}`;
+
+  await MemberProfile.findOneAndUpdate(
+    { user_id: req.user.user_id, gym_id: req.user.gym_id, is_deleted: false },
+    {
+      $set: { avatar_url },
+      $setOnInsert: {
+        user_id: req.user.user_id,
+        gym_id: req.user.gym_id,
+        membership_status: "active",
+        join_date: new Date(),
+      },
+    },
+    { upsert: true, new: true }
+  );
+
+  return res.status(200).json({ avatar_url });
 };
