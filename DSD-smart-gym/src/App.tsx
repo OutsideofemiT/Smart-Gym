@@ -4,7 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // Layouts
 import NonMemberLayout from "./layout/NonMemberLayout";
 import MemberLayout from "./layout/memberLayout"; 
-import Footer from "./layout/Footer";
+import Footer from "./layout/footer";
 
 
 // Pages

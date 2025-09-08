@@ -1,5 +1,5 @@
-import type { ClassAttendanceMetricCardProps } from "../../types/ClassAttendance.interface";
-import "../../styles/ClassAttendanceMetricCard.css";
+import type { ClassAttendanceMetricCardProps } from "../../../types/ClassAttendance.interface";
+import "../../../styles/ClassAttendanceMetricCard.css";
 
 const ClassAttendanceMetricCard: React.FC<ClassAttendanceMetricCardProps> = ({
   title,

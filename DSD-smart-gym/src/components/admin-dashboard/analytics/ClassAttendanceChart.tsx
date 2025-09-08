@@ -8,7 +8,7 @@ import {
   Legend,
   Line,
 } from "recharts";
-import type { ClassDataProps } from "../../types/ClassAttendance.interface.ts";
+import type { ClassDataProps } from "../../../types/ClassAttendance.interface.ts";
 
 const ClassAttendanceChart: React.FC<{ data: ClassDataProps[] }> = ({
   data,
