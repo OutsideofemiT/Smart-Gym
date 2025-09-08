@@ -16,6 +16,7 @@ export const requireAuth = (req: IAuthenticatedRequest, res: Response, next: Nex
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as IJwtPayload & JwtPayload;
+    
     if (!decoded?.sub) return res.status(401).json({ error: "Unauthorized" });
 
     req.user = {

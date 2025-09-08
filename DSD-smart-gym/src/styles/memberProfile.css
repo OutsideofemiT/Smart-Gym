@@ -184,3 +184,70 @@ html, body {
   color: var(--text);
   opacity: .9;
 }
+/* ===== Profile Modal (namespaced so it won't collide with QR modal) ===== */
+
+.profile-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000; /* above navbar */
+}
+
+.profile-modal {
+  width: min(720px, 92vw);
+  max-height: 82vh;
+  overflow: auto;
+  background: #1f1f1f;          /* matches your dark theme */
+  color: #eaeaea;
+  padding: 20px 22px;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.55),
+              0 0 0 1px rgba(199,255,89,.22);
+}
+
+.profile-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.profile-modal__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-modal__close {
+  background: transparent;
+  color: #fff;
+  border: 0;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.profile-modal__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* reuse your .mp-* controls but boost contrast in the modal */
+.profile-modal .mp-label { color: #cfcfcf; }
+.profile-modal .mp-fieldset {
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-top: 10px;
+}
+.profile-modal .mp-legend {
+  padding: 0 6px;
+  color: #dfead1;
+  font-weight: 600;
+}

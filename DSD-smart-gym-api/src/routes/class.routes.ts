@@ -1,88 +1,42 @@
 // src/routes/class.routes.ts
-import { Router } from "express";
-
-// ⬇️ keep these paths the same as in your project
-import { requireAuth} from "../middleware/requireAuth";
-import  { requireRole } from "../middleware/requireRole";
-
-// ⬇️ IMPORTANT: import *all* handlers you use below
+import express from "express";
+import { requireAuth } from "../middleware/requireAuth";
+import { requireRole } from "../middleware/requireRole";
 import {
-  createClass,
+  createSession,        // <-- This now exists in controller
   fetchClasses,
   fetchClassesByGym,
   fetchClassesByQuery,
   fetchUserClasses,
+  getTrainerClasses,
   joinClass,
   leaveClass,
   cancelClass,
   uncancelClass,
   deleteClass,
-  getTrainerClasses,
+  updateSession,        // <-- This now exists in controller
 } from "../controllers/class.controller";
 
-const router = Router();
+const router = express.Router();
 
-/**
- * READ
- * - GET /classes?gym_id=123            -> fetchClasses (query)
- * - GET /classes/gym/:gymId            -> fetchClassesByGym
- * - GET /classes/userClasses           -> member’s booked classes
- * - GET /classes/trainer/mine          -> trainer’s classes (admin can filter with ?trainer_id=...)
- */
-router.get("/", fetchClasses); // uses req.query.gym_id (and fallbacks) already
-router.get("/query", fetchClassesByQuery); // optional alias if you still call it
-router.get("/gym/:gymId", fetchClassesByGym);
+/* ---- Create (admins & trainers) ---- */
+router.post("/session", requireAuth, requireRole(["admin", "trainer"]), createSession);
 
-// auth required for user-specific endpoints
+/* ---- Read ---- */
+router.get("/", requireAuth, fetchClasses);
+router.get("/gym/:gymId", requireAuth, fetchClassesByGym);
+router.get("/search", requireAuth, fetchClassesByQuery);
 router.get("/userClasses", requireAuth, fetchUserClasses);
+router.get("/trainer/mine", requireAuth, requireRole(["trainer", "admin"]), getTrainerClasses);
 
-// trainer/admin: list own classes; admin can pass ?trainer_id=<email>
-router.get(
-  "/trainer/mine",
-  requireAuth,
-  requireRole(["trainer", "admin"]),
-  getTrainerClasses
-);
-
-/**
- * CREATE
- * - POST /classes                      -> create class (trainer = owns, admin = any)
- */
-router.post("/", requireAuth, requireRole(["trainer", "admin"]), createClass);
-
-/**
- * MEMBER ACTIONS
- * - POST /classes/:id/join
- * - POST /classes/:id/leave
- */
+/* ---- Join / Leave ---- */
 router.post("/:id/join", requireAuth, joinClass);
 router.post("/:id/leave", requireAuth, leaveClass);
 
-/**
- * ADMIN/TRAINER MANAGEMENT
- * - PUT /classes/:id/cancel
- * - PUT /classes/:id/uncancel
- * - DELETE /classes/:id
- */
-router.put(
-  "/:id/cancel",
-  requireAuth,
-  requireRole(["trainer", "admin"]),
-  cancelClass
-);
-
-router.put(
-  "/:id/uncancel",
-  requireAuth,
-  requireRole(["trainer", "admin"]),
-  uncancelClass
-);
-
-router.delete(
-  "/:id",
-  requireAuth,
-  requireRole(["trainer", "admin"]),
-  deleteClass
-);
+/* ---- Admin/Trainer controls ---- */
+router.put("/:id/cancel", requireAuth, requireRole(["admin", "trainer"]), cancelClass);
+router.put("/:id/uncancel", requireAuth, requireRole(["admin", "trainer"]), uncancelClass);
+router.put("/:id", requireAuth, requireRole(["admin", "trainer"]), updateSession);
+router.delete("/:id", requireAuth, requireRole(["admin", "trainer"]), deleteClass);
 
 export default router;
