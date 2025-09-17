@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import AdminDashboardLayout from "../layout/AdminDashboardLayout";
-import Analytics from "../components/admin-dashboard/Analytics";
+import Analytics from "../components/admin-dashboard/analytics/Analytics";
 import SideNavBar from "../layout/SideNavBar";
 import type { View } from "../types/AdminDashboard.interface";
 import AccountManagement from "../components/admin-dashboard/AccountManagement";
