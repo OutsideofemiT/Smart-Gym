@@ -1,6 +1,5 @@
 import React from "react";
 import { QRCodeCanvas } from "qrcode.react";
-import "../../styles/QRModal.css";
 import "../../styles/DashboardTile.css";
 
 interface DashboardTileProps {

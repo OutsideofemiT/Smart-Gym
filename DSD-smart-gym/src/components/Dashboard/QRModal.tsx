@@ -1,30 +1,27 @@
 import React, { useEffect, useState } from "react";
 import { QRCodeCanvas } from "qrcode.react";
 import ApiHandler from "../../utils/ApiHandler";
+import "../../styles/QRModal.css";
 
 interface QRModalProps {
   isOpen: boolean;
   onClose: () => void;
   gymId: string;
+  mode: 'checkin' | 'checkout';
 }
 
-const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, gymId }) => {
+const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, gymId, mode }) => {
   const [qrCodeValue, setQrCodeValue] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    if (!isOpen) return;
-
+    if (!isOpen || mode === 'checkout') return;
     const fetchQRCode = async () => {
-      console.log("🌐 VITE_API_URL:", import.meta.env.VITE_API_URL);
-
       try {
         const data = await ApiHandler.post("/access/generateQRCode", {
           gym_id: gymId,
         });
-
         const rawQr = data.qrCode;
-
         if (typeof rawQr === "string") {
           setQrCodeValue(rawQr);
         } else if (typeof rawQr === "object" && rawQr.qr_code) {
@@ -32,7 +29,6 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, gymId }) => {
         } else {
           throw new Error("QR code missing or malformed.");
         }
-
         setLoading(false);
       } catch (err: any) {
         console.error("QR Code fetch error:", err);
@@ -40,9 +36,8 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, gymId }) => {
         setLoading(false);
       }
     };
-
     fetchQRCode();
-  }, [isOpen, gymId]);
+  }, [isOpen, gymId, mode]);
 
   const handleCheckInOut = async () => {
     try {
@@ -57,17 +52,26 @@ const QRModal: React.FC<QRModalProps> = ({ isOpen, onClose, gymId }) => {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+    <div className="qr-modal-overlay-unique" onClick={onClose}>
+      <div className="qr-modal-content-unique" onClick={(e) => e.stopPropagation()}>
         <button className="close-btn" onClick={onClose}>✕</button>
-        <h2>Check-In</h2>
-        {!loading && qrCodeValue ? (
+        {mode === 'checkin' ? (
           <>
-            <QRCodeCanvas value={qrCodeValue} size={200} />
-            <button className="checkin-btn" onClick={handleCheckInOut}>Check In/Out</button>
+            <h2>Check-In</h2>
+            {!loading && qrCodeValue ? (
+              <>
+                <QRCodeCanvas value={qrCodeValue} size={200} />
+                <button className="checkin-btn" onClick={handleCheckInOut}>You are Checked In</button>
+              </>
+            ) : (
+              <p>Loading QR Code...</p>
+            )}
           </>
         ) : (
-          <p>Loading QR Code...</p>
+          <>
+            <h2>Check-Out</h2>
+            <p>You are checked out.</p>
+          </>
         )}
       </div>
     </div>

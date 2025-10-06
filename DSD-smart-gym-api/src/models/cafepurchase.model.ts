@@ -27,8 +27,8 @@ const cafePurchaseSchema = new Schema(
     // If your User._id is a string UUID, change type to String.
     user_id: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
 
-    /** Location reference */
-    location_id: { type: Schema.Types.ObjectId, ref: "Location", required: true, index: true },
+  /** Location reference */
+  location_id: { type: Schema.Types.ObjectId, ref: "Location", required: false, index: true },
 
     /** Denormalized for convenience; we still join via user_id when needed */
     email: { type: String, trim: true, required: true },

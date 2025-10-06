@@ -1,7 +1,9 @@
 .inventory-list-wrapper {
   border-radius: 20px;
   overflow: hidden;
+  margin-top: 70px;
   margin-bottom: 20px;
+  background-color: whitesmoke;
   transform: scale(0.95) translateY(160px);
   box-shadow: rgba(0, 0, 0, 0.568) 0px 5px 100px;
 }

@@ -1,18 +1,18 @@
 
 
 /* AFTER (QR-only) */
-.qr-modal-overlay {
+.qr-modal-overlay-unique {
   position: fixed;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
-  background-color: rgba(0,0,0,.55);
+  background-color: rgba(255,255,255,0.5);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1600;
 }
 
-.qr-modal-content {
+.qr-modal-content-unique {
   width: 360px;
   height: 360px;
   background: #fff;

@@ -27,7 +27,7 @@ interface CartItem extends CafeItem {
 
 const IMAGE_MAP: Record<string, string> = {
   "protein shake": ProteinShake,
-  "cold brew coffee": ColdBrew,
+  "cold brew": ColdBrew,
   "fruit cup": FruitCup,
   "energy bar": EnergyBar,
 };
