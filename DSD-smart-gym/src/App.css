@@ -1,0 +1,37 @@
+:root{ --bg:#2e2e2e; }
+
+html,body,#root{
+  min-height:100%;
+  width:100%;
+  background:var(--bg) !important;
+  overflow-x:hidden;
+}
+
+#root{
+  max-width:none;
+  margin:0;
+  padding:0;
+  text-align:unset;
+}
+
+.app-shell{
+  min-height:100svh;
+  display:flex;
+  flex-direction:column;
+  background:var(--bg) !important;
+}
+
+.page-main,.app-main,.member-main{
+  flex:1 0 auto;
+  background:transparent !important;
+}
+
+footer{ background:var(--bg) !important; }
+
+:where(.container,.row,.col,
+       .card,.card-body,
+       .accordion,.accordion-item,.accordion-body,
+       .list-group,.list-group-item){
+  background-color:transparent !important;
+  border-color:rgba(255,255,255,.08);
+}

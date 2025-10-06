@@ -1,0 +1,135 @@
+.inventory-list-wrapper {
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  transform: scale(0.95) translateY(160px);
+  box-shadow: rgba(0, 0, 0, 0.568) 0px 5px 100px;
+}
+
+.no-selection-warning {
+  padding: 0 5px;
+  margin: 5px;
+}
+
+.manage-inventory-tools {
+  display: flex;
+  gap: 20px;
+}
+
+.manage-inventory-tools span:not(:first-child):hover {
+  cursor: pointer;
+  color: rgb(50, 177, 0);
+}
+
+.inventory-management-modal .modal-content {
+  position: relative;
+  left: 25%;
+  height: fit-content;
+  padding: 0;
+  max-width: none !important;
+}
+
+.inventory-management-modal .modal-content > div {
+  width: inherit;
+}
+
+.inventory-management-modal .modal-body {
+  padding: 15px;
+}
+
+.inventory-management-modal .modal-footer {
+  justify-content: center;
+}
+
+.inventory-management-modal .h4 {
+  margin: 0;
+}
+
+.add-items-input-entry {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: inherit;
+  justify-self: flex-start;
+  flex-wrap: wrap;
+}
+
+.add-items-input-entry .item-input-error {
+  width: 100%;
+  padding: 0;
+}
+
+.add-items-input-entry #formItemName {
+  justify-self: flex-start;
+  width: 260px;
+}
+
+.add-items-input-entry #formPrice {
+  width: 80px;
+}
+
+.add-items-input-entry #formQuantity {
+  width: 70px;
+}
+
+.add-entry-button {
+  cursor: pointer;
+  font-size: 2rem;
+}
+
+.delete-entry-button {
+  align-self: center;
+  transform: scale(140%);
+  cursor: pointer;
+}
+
+.delete-items-modal .modal-content {
+  max-width: none !important;
+  width: 600px !important;
+  margin: auto;
+}
+
+.delete-items-modal p {
+  font-weight: bold;
+}
+
+.update-items-modal .modal-content {
+  position: relative;
+  left: 15%;
+  max-width: none !important;
+  width: 765px !important;
+}
+
+.no-updates-error {
+  position: relative;
+  width: fit-content;
+  padding: 0 20px;
+  margin: 0 150px;
+}
+
+.update-items-input-entry {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: inherit;
+  gap: 20px;
+}
+
+.update-items-input-entry .item-input-error {
+  position: relative;
+  left: 80px;
+  width: 70%;
+  padding: 0;
+}
+
+.update-items-input-entry #formId {
+  width: 320px;
+}
+
+.update-items-input-entry #formPrice {
+  width: 80px;
+}
+
+.update-items-input-entry #formQuantity {
+  width: 70px;
+}
