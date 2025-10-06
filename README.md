@@ -53,12 +53,37 @@ As a core developer and project maintainer, my contributions include:
 
 ---
 
+
+
+## Screenshots
+
+### Login Screen
+![Login Screen](./DSD-smart-gym/public/assets/LoginScreen.png)
+
+### Membership Benefits
+![Membership Benefits](./DSD-smart-gym/public/assets/membership-benefits-screenshot.png)
+
+### Membership Sign Up
+![Membership Sign Up](./DSD-smart-gym/public/assets/membership-signup-screenshot.png)
+
+### Member Portal
+![Member Portal](./DSD-smart-gym/public/assets/member-portal-screenshot.png)
+
+### Classes
+![Classes](./DSD-smart-gym/public/assets/class-management-screenshot.png)
+
+### Analytics
+![Analytics Dashboard](./DSD-smart-gym/public/assets/analytics-dashboard-screenshot.png)
+
+### Smart Gym Café
+![Smart Gym Café](./DSD-smart-gym/public/assets/cafe-screenshot.png)
+
 ## Getting Started
 
 1. Clone the repo:
-   ```bash
-   git clone https://github.com/OutsideofemiT/Smart-Gym.git
-   ```
+  ```bash
+  git clone https://github.com/OutsideofemiT/Smart-Gym.git
+  ```
 2. Install dependencies for both frontend and backend.
 3. Set up your `.env` files (see `.env.example`).
 4. Run the backend and frontend servers.
