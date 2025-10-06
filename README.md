@@ -60,19 +60,19 @@ As a core developer and project maintainer, my contributions include:
 ### Login Screen
 ![Login Screen](./DSD-smart-gym/public/assets/LoginScreen.png)
 
-### Membership Benefits
+### Membership Portal
 ![Membership Portal](./DSD-smart-gym/public/assets/MemberPortal.png)
 
-### Membership Sign Up
+### Member Checkin
 ![Membership QR Checkin](./DSD-smart-gym/public/assets/qrcheckin.png)
 
 ### Smart Gym Café
 ![Smart Gym Café](./DSD-smart-gym/public/assets/Cafe.png)
 
-### Classes
+### Admin Class Management
 ![Class Management](./DSD-smart-gym/public/assets/ClassMgmt.png)
 
-### Analytics
+### Admin Analytics
 ![Analytics Dashboard](./DSD-smart-gym/public/assets/AdminDash.png)
 
 
