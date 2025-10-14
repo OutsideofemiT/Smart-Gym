@@ -6,6 +6,7 @@ import { requireAuth } from "../middleware/requireAuth";
 import { getCheckoutDetails } from "../controllers/cafepurchase.controller";
 import { IAuthenticatedRequest } from "../types/interface";
 import { CafePurchase } from "../models/cafepurchase.model";
+import mongoose from "mongoose";
 
 dotenv.config();
 const router = express.Router();
@@ -76,20 +77,23 @@ router.post(
           quantity: item.quantityOrdered,
         }));
 
-      const items = validCart.map((i) => ({
+      // Build DB-friendly items (price in cents) and attach tenant/user ids expected by the model
+      const itemsForDb = validCart.map((i) => ({
         name: i.item_name,
         qty: i.quantityOrdered,
-        price: i.price,
+        price_cents: Math.round(Number(i.price) * 100),
       }));
-      const total = items.reduce((sum, it) => sum + it.qty * it.price, 0);
 
-      const purchase = await CafePurchase.create({
-        userId,
-        email,
-        items,
-        total,
+      // Create a payload that matches the CafePurchase schema
+      const purchasePayload: any = {
+        gym_id: new mongoose.Types.ObjectId(String(claims.gym_id || "")),
+        user_id: new mongoose.Types.ObjectId(String(userId)),
+        email: String(email).toLowerCase(),
+        items: itemsForDb,
         status: "pending",
-      });
+      };
+
+      const purchase = await CafePurchase.create(purchasePayload);
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
@@ -103,14 +107,23 @@ router.post(
           kind: "cafe",
           purchaseId: String(purchase._id),
           userId,
+          gymId: String(claims.gym_id ?? ""),
           items: JSON.stringify(
             validCart.map((i) => ({
               item_name: i.item_name,
-              price: Math.round(i.price * 100),
+              price_cents: Math.round(i.price * 100),
               quantity: i.quantityOrdered,
               image: i.image,
             }))
           ),
+        },
+        // ensure PaymentIntent/Charge metadata includes purchaseId so charge events can find the purchase
+        payment_intent_data: {
+          metadata: {
+            purchaseId: String(purchase._id),
+            userId,
+            gymId: String(claims.gym_id ?? ""),
+          },
         },
       });
 
