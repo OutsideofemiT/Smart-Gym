@@ -46,7 +46,8 @@ const clientBuildPath = path.join(process.cwd(), "public");
 if (fs.existsSync(clientBuildPath)) {
   app.use(express.static(clientBuildPath));
 
-  app.get("/*", (req, res, next) => {
+  // Serve index.html for non-API routes using middleware (avoid path-to-regexp wildcard parsing)
+  app.use((req, res, next) => {
     const p = req.path || "";
     if (p.startsWith("/api") || p.startsWith("/uploads") || p.startsWith("/stripe")) {
       return next();

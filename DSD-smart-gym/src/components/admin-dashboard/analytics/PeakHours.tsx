@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import type {
   PeakHoursData,
   TimeOptions,
-} from "../../../types/Analytics.interface";
+} from "../../../types/Analytics.interface.ts";
 import "../../../styles/PeakHours.css";
 import ApiHandler from "../../../utils/ApiHandler";
 

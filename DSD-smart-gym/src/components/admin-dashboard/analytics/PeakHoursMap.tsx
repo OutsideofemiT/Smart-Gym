@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import type { PeakHoursData } from "../../../types/Analytics.interface";
+import type { PeakHoursData } from "../../../types/Analytics.interface.ts";
 
 interface GridCells {
   [key: string]: {

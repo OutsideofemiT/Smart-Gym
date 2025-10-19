@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 import { createContext, useState, useEffect, useContext } from "react";
-import { useAuth } from "@clerk/clerk-react";
-
 const ProfileContext = createContext<IProfile | null>(null);
 
 interface IProfile {
@@ -12,22 +10,26 @@ interface IProfile {
   gym_id: string;
 }
 
-export const ProfileProvider = ({ children }: {children: ReactNode}) => {
-  const { getToken, userId, isSignedIn } = useAuth();
+export const ProfileProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<IProfile | null>(null);
 
   useEffect(() => {
-      if (!isSignedIn) {
-        setProfile(null);
-        return;
-      }
-      (async () => {
+    let mounted = true;
+
+    const loadProfile = async () => {
       try {
-        const token = await getToken();
+        // Expecting JWT token stored in localStorage under 'token' or 'accessToken'
+        const token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+        if (!token) {
+          if (mounted) setProfile(null);
+          return;
+        }
+
         const res = await fetch("/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        if (!mounted) return;
         if (res.ok) {
           const data: IProfile = await res.json();
           setProfile(data);
@@ -36,12 +38,18 @@ export const ProfileProvider = ({ children }: {children: ReactNode}) => {
         }
       } catch (error) {
         console.error("Failed to fetch profile:", error);
-        setProfile(null);
+        if (mounted) setProfile(null);
       }
-    })();
-  }, [getToken, userId, isSignedIn]);
+    };
 
-  return <ProfileContext.Provider value={ profile }>{children}</ProfileContext.Provider>
-}
+    loadProfile();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return <ProfileContext.Provider value={profile}>{children}</ProfileContext.Provider>;
+};
 
 export const useProfile = () => useContext(ProfileContext);
