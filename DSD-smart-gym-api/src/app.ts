@@ -18,7 +18,27 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: true, credentials: true }));
+// Explicit CORS origins
+const allowedOrigins = [
+  "https://smart-gym-jxxx.onrender.com",
+  "http://localhost:3000" // for local dev/testing
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        const msg =
+          "The CORS policy for this site does not allow access from the specified Origin.";
+        return callback(new Error(msg), false);
+      }
+      return callback(null, true);
+    },
+    credentials: true,
+  })
+);
 
 app.use("/api/stripe/webhook", webhookRouter);
 
@@ -28,7 +48,7 @@ connectDB();
 
 fs.mkdirSync(path.join(process.cwd(), "uploads", "avatars"), { recursive: true });
 
-app.get("/test", (req, res) => {
+app.get("/test", (_req, res) => {
   res.json({ message: "Test route working" });
 });
 
@@ -56,21 +76,21 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
-app.use((req, res) => {
-  console.log("404 hit:", req.originalUrl);
+app.use((_req, res) => {
+  console.log("404 hit:", _req.originalUrl);
   res.status(404).json({ error: "Not found" });
 });
 
-app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-  console.error("Unhandled error:", err);
-  res.status(err.status || 500).json({ error: err.message || "Server error" });
-});
+app.use(
+  (err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error("Unhandled error:", err);
+    res.status(err.status || 500).json({ error: err.message || "Server error" });
+  }
+);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
-  if (process.env.NODE_ENV !== "production") {
-  }
 });
 
 export default app;
