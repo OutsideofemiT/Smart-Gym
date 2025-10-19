@@ -22,6 +22,30 @@ html, body {
   padding: 24px;
   color: var(--text);
 }
+/* src/styles/memberProfile.css */
+/* Uses the same tokens as Join Today. If Join's :root is already loaded,
+   these fallbacks will be overridden by your global tokens. */
+:root {
+  --nav-h: 76px;              /* adjust if your navbar is taller */
+  --accent: #bcfd4c;
+  --text: #f5f5f5;
+  --muted: #bdbdbd;
+  --panel: rgba(255,255,255,0.05);
+  --panel-strong: rgba(255,255,255,0.05);
+  --border: rgba(255,255,255,0.15);
+  --border-soft: rgba(255,255,255,0.10);
+  --focus-ring: rgba(188,253,76,0.25);
+}
+
+html, body {
+  margin: 0;
+  overflow-x: hidden;
+}
+
+.mp-loading {
+  padding: 24px;
+  color: var(--text);
+}
 
 /* --- PAGE WRAPPER -------------------------------------------------------- */
 /* Key changes:
@@ -216,6 +240,19 @@ html, body {
   margin-bottom: 10px;
 }
 
+.profile-modal__identity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-modal__identity h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--text);
+  font-weight: 700;
+}
+
 .profile-modal__actions {
   display: flex;
   align-items: center;
@@ -224,11 +261,19 @@ html, body {
 
 .profile-modal__close {
   background: transparent;
-  color: #fff;
+  color: var(--accent);
   border: 0;
-  font-weight: 700;
+  font-weight: 900;
   cursor: pointer;
   padding: 6px 10px;
+  font-size: 20px;
+  line-height: 1;
+  border-radius: 6px;
+}
+
+.profile-modal__close:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px var(--focus-ring);
 }
 
 .profile-modal__avatar {
@@ -238,8 +283,22 @@ html, body {
   object-fit: cover;
 }
 
+.profile-modal__avatar--initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* gray background with lime initials for contrast */
+  background: #6b6b6b;
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 18px;
+  text-transform: uppercase;
+  border: 2px solid rgba(255,255,255,0.06);
+}
+
 /* reuse your .mp-* controls but boost contrast in the modal */
-.profile-modal .mp-label { color: #cfcfcf; }
+.profile-modal .mp-label { color: var(--accent); font-weight: 700; }
+.profile-modal .mp-value { color: whitesmoke; }
 .profile-modal .mp-fieldset {
   border: 1px solid rgba(255,255,255,.08);
   border-radius: 12px;
@@ -251,3 +310,66 @@ html, body {
   color: #dfead1;
   font-weight: 600;
 }
+
+/* Upload progress UI */
+.mp-upload-progress {
+  position: relative;
+  width: 160px;
+  height: 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.mp-upload-progress__bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #9ee86e);
+  transition: width 160ms linear;
+}
+.mp-upload-progress__label {
+  position: absolute;
+  right: 6px;
+  top: -18px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+/* Address block displayed compactly */
+.mp-address-block { display: grid; gap: 4px; margin-top: 8px; }
+.mp-address-block .mp-value div { line-height: 1.2; }
+
+/* Preferences: unboxed look */
+.mp-preferences { margin-top: 10px; }
+.mp-preferences .mp-value { display: flex; gap: 12px; flex-wrap: wrap; }
+/* Preference labels keep accent; values use whitesmoke for readability */
+.mp-preferences .mp-value > div { font-weight: 700; }
+.mp-preferences .mp-value .mp-pref-value { color: whitesmoke; font-weight: 700; }
+
+/* Accordion for class preferences */
+.mp-accordion {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  padding: 8px;
+}
+.mp-accordion__summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  color: var(--text);
+  font-weight: 700;
+}
+.mp-accordion__summary::-webkit-details-marker { display: none; }
+.mp-accordion__count { background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 999px; color: var(--text); font-weight: 800; }
+.mp-accordion__panel { margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.03); }
+.mp-class-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
+.mp-class-item { display: flex; align-items: center; gap: 8px; padding: 6px; background: rgba(255,255,255,0.02); border-radius: 8px; cursor: pointer; }
+.mp-class-item input { width: 18px; height: 18px; }
+.mp-class-label { color: var(--text); font-weight: 700; }
+.mp-class-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.mp-chip { background: rgba(255,255,255,0.04); color: var(--text); border: 1px solid rgba(255,255,255,0.06); padding: 6px 10px; border-radius: 999px; cursor: pointer; }
+.mp-chip--selected { background: var(--accent); color: #111; border-color: rgba(0,0,0,0.12); }

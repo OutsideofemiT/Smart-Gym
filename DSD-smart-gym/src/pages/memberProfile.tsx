@@ -1,7 +1,6 @@
 // src/pages/member/MemberProfile.tsx
 import { useEffect, useMemo, useState, type FC } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
 import ApiHandler from "../utils/ApiHandler";
 import { normalizePhoneE164 } from "../utils/profileValidators";
 import type { Address, ProfileForm } from "../types/MemberProfile";
@@ -48,6 +47,7 @@ const MemberProfile: FC = () => {
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
+  const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
@@ -106,9 +106,18 @@ const MemberProfile: FC = () => {
   );
 
   const onPickAvatar = async (file: File) => {
+    // client-side validation
+    const maxBytes = 4 * 1024 * 1024; // 4MB
+    if (file.size > maxBytes) return setMsg("File is too large (max 4MB)");
+    if (!/^image\/(png|jpe?g|webp|gif)$/.test(file.type))
+      return setMsg("Only png/jpg/jpeg/webp/gif allowed");
+
     try {
       setSaving(true);
-      const { avatar_url } = await ApiHandler.uploadMyAvatar(file);
+      setUploadPct(0);
+      const { avatar_url } = await ApiHandler.uploadMyAvatarWithProgress(file, (pct) => {
+        setUploadPct(pct);
+      });
       setAvatarPreview(avatar_url);
       setForm((p) => ({ ...p, avatar_url }));
       setMsg("Avatar updated.");
@@ -116,6 +125,7 @@ const MemberProfile: FC = () => {
       setMsg(e?.message || "Avatar upload failed.");
     } finally {
       setSaving(false);
+      setTimeout(() => setUploadPct(null), 800);
     }
   };
 
@@ -166,34 +176,62 @@ const MemberProfile: FC = () => {
         className="profile-modal-overlay"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="profile-modal-title"
+        tabIndex={-1}
         onClick={() => navigate(-1)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") navigate(-1);
+        }}
       >
         <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
           <header className="profile-modal__header">
-            <h2>Member Profile</h2>
+            <div className="profile-modal__identity">
+              {avatarPreview ? (
+                <img
+                  src={avatarPreview}
+                  alt={`${(form.first_name + " " + form.last_name).trim() || "Member"} avatar`}
+                  className="profile-modal__avatar"
+                />
+              ) : (
+                <div
+                  className="profile-modal__avatar profile-modal__avatar--initials"
+                  role="img"
+                  aria-label={(form.first_name || form.last_name)
+                    ? `${(form.first_name + " " + form.last_name).trim()} initials`
+                    : "No avatar"
+                  }
+                  title={(form.first_name || form.last_name)
+                    ? `${(form.first_name + " " + form.last_name).trim()}`
+                    : "No avatar"
+                  }
+                >
+                  {(() => {
+                    const a = (form.first_name || "").trim();
+                    const b = (form.last_name || "").trim();
+                    if (a && b) return (a[0] + b[0]).toUpperCase();
+                    if (a) return a[0].toUpperCase();
+                    if (b) return b[0].toUpperCase();
+                    return "?";
+                  })()}
+                </div>
+              )}
+
+              <h2 id="profile-modal-title">{(form.first_name + " " + form.last_name).trim() || "Member Profile"}</h2>
+            </div>
+
             <div className="profile-modal__actions">
-              <Link to="/member/profile/edit" className="mp-btn mp-btn-primary">
-                Edit
-              </Link>
-              <button className="profile-modal__close" onClick={() => navigate(-1)}>
-                Close
+              <button
+                className="profile-modal__close"
+                onClick={() => navigate(-1)}
+                aria-label="Close profile"
+                title="Close"
+              >
+                ✕
               </button>
             </div>
           </header>
 
-          <div className="mp-field">
-            <div className="mp-label">Avatar</div>
-            <img
-              src={avatarPreview || "/placeholder-avatar.png"}
-              alt="Avatar"
-              className="profile-modal__avatar"
-            />
-          </div>
-
-          <div className="mp-field">
-            <div className="mp-label">Name</div>
-            <div>{(form.first_name + " " + form.last_name).trim() || "—"}</div>
-          </div>
+          {/* Name moved to header */}
 
           <div className="mp-field">
             <div className="mp-label">Email</div>
@@ -205,50 +243,46 @@ const MemberProfile: FC = () => {
             <div>{form.phone_e164 || "—"}</div>
           </div>
 
-          <fieldset className="mp-fieldset">
-            <legend className="mp-legend">Address</legend>
-            <div className="mp-field">
-              <div className="mp-label">Line 1</div>
-              <div>{form.address.line1 || "—"}</div>
+          <div className="mp-field mp-address-block">
+            <div className="mp-label">Address</div>
+            <div className="mp-value">
+              {form.address.line1 ? (
+                <div>{form.address.line1}</div>
+              ) : null}
+              {form.address.line2 ? (
+                <div>{form.address.line2}</div>
+              ) : null}
+              {(form.address.city || form.address.state || form.address.postal_code) ? (
+                <div>
+                  {form.address.city ? `${form.address.city}` : ""}
+                  {form.address.state ? ` ${form.address.state}` : ""}
+                  {form.address.postal_code ? ` ${form.address.postal_code}` : ""}
+                </div>
+              ) : null}
+              {!form.address.line1 && !form.address.line2 && !form.address.city && !form.address.state && !form.address.postal_code ? (
+                <div>—</div>
+              ) : null}
             </div>
-            <div className="mp-field">
-              <div className="mp-label">Line 2</div>
-              <div>{form.address.line2 || "—"}</div>
-            </div>
+          </div>
 
-            <div className="mp-row">
-              <div className="mp-field">
-                <div className="mp-label">City</div>
-                <div>{form.address.city || "—"}</div>
+          <div className="mp-field mp-preferences">
+            <div className="mp-label">Preferences</div>
+            <div className="mp-value mp-row">
+              <div>
+                Email: <span className="mp-pref-value">{form.communication_prefs.email ? "On" : "Off"}</span>
               </div>
-              <div className="mp-field">
-                <div className="mp-label">State</div>
-                <div>{form.address.state || "—"}</div>
+              <div>
+                SMS: <span className="mp-pref-value">{form.communication_prefs.sms ? "On" : "Off"}</span>
               </div>
-              <div className="mp-field">
-                <div className="mp-label">Postal Code</div>
-                <div>{form.address.postal_code || "—"}</div>
+              <div>
+                Push: <span className="mp-pref-value">{form.communication_prefs.push ? "On" : "Off"}</span>
               </div>
-            </div>
-
-            <div className="mp-field">
-              <div className="mp-label">Country</div>
-              <div>{form.address.country || "—"}</div>
-            </div>
-          </fieldset>
-
-          <fieldset className="mp-fieldset">
-            <legend className="mp-legend">Preferences</legend>
-            <div className="mp-row">
-              <div>Email: {form.communication_prefs.email ? "On" : "Off"}</div>
-              <div>SMS: {form.communication_prefs.sms ? "On" : "Off"}</div>
-              <div>Push: {form.communication_prefs.push ? "On" : "Off"}</div>
             </div>
             <div className="mp-field">
               <div className="mp-label">Marketing</div>
-              <div>{form.marketing_op_in ? "Opted in" : "Opted out"}</div>
+              <div className="mp-value"><span className="mp-pref-value">{form.marketing_op_in ? "Opted in" : "Opted out"}</span></div>
             </div>
-          </fieldset>
+          </div>
 
           <div className="mp-field">
             <div className="mp-label">Class Preferences</div>
@@ -286,12 +320,57 @@ const MemberProfile: FC = () => {
               alt="Avatar preview"
               className="profile-modal__avatar"
             />
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files?.[0] && onPickAvatar(e.target.files[0])}
-              disabled={saving}
-            />
+            <div>
+              <label htmlFor="avatar-file" className="mp-help" style={{ display: "block" }}>
+                Upload an avatar (png/jpg/webp/gif, max 4MB)
+              </label>
+              <input
+                id="avatar-file"
+                aria-label="Upload avatar"
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+                onChange={(e) => e.target.files?.[0] && onPickAvatar(e.target.files[0])}
+                disabled={saving}
+              />
+              {form.avatar_url ? (
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    type="button"
+                    className="mp-btn mp-btn-ghost"
+                    aria-label="Remove avatar"
+                    onClick={async () => {
+                      if (!confirm("Remove avatar?")) return;
+                      try {
+                        setSaving(true);
+                        await ApiHandler.deleteMyAvatar();
+                        setForm((p) => ({ ...p, avatar_url: undefined }));
+                        setAvatarPreview(undefined);
+                        setMsg("Avatar removed.");
+                      } catch (e: any) {
+                        setMsg(e?.message || "Failed to remove avatar.");
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : null}
+              {uploadPct !== null && (
+                <div
+                  className="mp-upload-progress"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={uploadPct}
+                  aria-label={`Upload progress ${uploadPct}%`}
+                >
+                  <div className="mp-upload-progress__bar" style={{ width: `${uploadPct}%` }} />
+                  <div className="mp-upload-progress__label">{uploadPct}%</div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -486,24 +565,77 @@ const MemberProfile: FC = () => {
         </fieldset>
 
         <div className="mp-field">
-          <label className="mp-label" htmlFor="class_prefs">
-            Class Preferences
-          </label>
-          <input
-            id="class_prefs"
-            className="mp-input"
-            value={form.class_preferences.join(", ")}
-            onChange={(e) =>
-              setField(
-                "class_preferences",
-                e.target.value
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-              )
-            }
-            placeholder="e.g. HIIT, Yoga, Strength"
-          />
+          <label className="mp-label">Class Preferences</label>
+
+          {/* Accordion summary */}
+          <details className="mp-accordion">
+            <summary className="mp-accordion__summary">
+              Select classes you're interested in
+              <span className="mp-accordion__count">{form.class_preferences.length}</span>
+            </summary>
+
+            <div className="mp-accordion__panel">
+              <p className="mp-help">Tap or click to select multiple classes.</p>
+              <div className="mp-class-list">
+                {[
+                  "HIIT",
+                  "Yoga",
+                  "Strength",
+                  "Cycling",
+                  "Boxing"
+                ].map((c) => {
+                  const selected = form.class_preferences.includes(c);
+                  return (
+                    <label key={c} className={`mp-class-item ${selected ? "selected" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => {
+                          setField(
+                            "class_preferences",
+                            selected
+                              ? form.class_preferences.filter((x) => x !== c)
+                              : [...form.class_preferences, c]
+                          );
+                        }}
+                      />
+                      <span className="mp-class-label">{c}</span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <div className="mp-class-chips">
+                {[
+                  "HIIT",
+                  "Yoga",
+                  "Strength",
+                  "Cycling",
+                  "Boxing"
+                ].map((c) => {
+                  const selected = form.class_preferences.includes(c);
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      className={`mp-chip ${selected ? "mp-chip--selected" : ""}`}
+                      onClick={() => {
+                        setField(
+                          "class_preferences",
+                          selected
+                            ? form.class_preferences.filter((x) => x !== c)
+                            : [...form.class_preferences, c]
+                        );
+                      }}
+                      aria-pressed={selected}
+                    >
+                      {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </details>
         </div>
 
         <div className="mp-field">

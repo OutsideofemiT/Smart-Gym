@@ -15,6 +15,7 @@ import {
   getMyProfile,
   uploadAvatar, // saves avatar_url on the user/profile and returns { avatar_url }
 } from "../controllers/user.controller";
+import { deleteAvatar } from "../controllers/user.controller";
 import { getTrainerClasses } from "../controllers/class.controller";
 import { requireAuth } from "../middleware/requireAuth";
 import { requireRole } from "../middleware/requireRole";
@@ -69,6 +70,9 @@ router.get("/me", requireAuth, async (req: IAuthenticatedRequest, res: Response)
 // Avatar upload (multipart/form-data; field name: "avatar")
 // Returns { avatar_url: string }
 router.post("/profile/avatar", requireAuth, upload.single("avatar"), uploadAvatar);
+
+// Remove avatar (clears avatar_url) - returns { avatar_url: null }
+router.delete("/profile/avatar", requireAuth, deleteAvatar);
 
 /* ---- Trainer helper: classes for this trainer (admin ok) ---- */
 router.get(

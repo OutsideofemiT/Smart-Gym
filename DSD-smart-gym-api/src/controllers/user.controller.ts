@@ -2,6 +2,8 @@
 import { Request, Response } from "express";
 import { Types, MongooseError } from "mongoose";
 import jwt from "jsonwebtoken";
+import fs from "fs";
+import path from "path";
 
 import { User } from "../models/user.model";
 import { Gym } from "../models/gym.model";
@@ -377,4 +379,52 @@ export const uploadAvatar = async (req: IAuthenticatedRequest, res: Response) =>
   );
 
   return res.status(200).json({ avatar_url });
+};
+
+/** Delete avatar (clear avatar_url and remove file from disk if local) */
+export const deleteAvatar = async (req: IAuthenticatedRequest, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" });
+
+  try {
+    const profile = await MemberProfile.findOne({
+      user_id: req.user.user_id,
+      gym_id: req.user.gym_id,
+      is_deleted: false,
+    }).lean();
+
+    // If there's an avatar_url on the profile, attempt to delete the local file
+    if (profile && profile.avatar_url) {
+      let filename: string | null = null;
+      try {
+        const parsed = new URL(profile.avatar_url);
+        filename = path.basename(parsed.pathname);
+      } catch (e) {
+        // fallback: naive parse
+        const parts = String(profile.avatar_url).split("/");
+        filename = parts[parts.length - 1] || null;
+      }
+
+      if (filename) {
+        const filepath = path.join(process.cwd(), "uploads", "avatars", filename);
+        try {
+          if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+        } catch (err) {
+          // ignore file deletion errors — clearing DB is primary
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn("Failed to delete avatar file:", msg);
+        }
+      }
+    }
+
+    // Clear avatar_url on the member profile (if exists)
+    await MemberProfile.findOneAndUpdate(
+      { user_id: req.user.user_id, gym_id: req.user.gym_id, is_deleted: false },
+      { $unset: { avatar_url: "" } },
+      { new: true }
+    );
+
+    return res.status(200).json({ avatar_url: null });
+  } catch (error) {
+    return res.status(500).json({ error: "Internal server error" });
+  }
 };

@@ -137,7 +137,8 @@ const ApiHandler = {
     if (!id) throw new Error("Could not determine your user id");
     const fd = new FormData();
     fd.append("avatar", file);
-    const res = await fetch(join(API_BASE_URL, `/users/${encodeURIComponent(id)}/avatar`), {
+    // Backend implements avatar upload at POST /users/profile/avatar (requires auth)
+    const res = await fetch(join(API_BASE_URL, `/users/profile/avatar`), {
       method: "POST",
       headers: { ...getAuthHeader() }, // no manual Content-Type for FormData
       credentials: "include",
@@ -145,6 +146,56 @@ const ApiHandler = {
     });
     return handleResponse(res) as Promise<{ avatar_url: string }>;
   },
+
+  /** Upload avatar with a progress callback (0-100). Uses XHR to surface upload progress. */
+  async uploadMyAvatarWithProgress(file: File, onProgress: (pct: number) => void) {
+    const token = getStoredToken();
+    if (!token) throw new Error("Not authenticated");
+
+    const fd = new FormData();
+    fd.append("avatar", file);
+
+    return new Promise<{ avatar_url: string }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", join(API_BASE_URL, `/users/profile/avatar`), true);
+      xhr.withCredentials = true;
+      xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+
+      xhr.upload.onprogress = (ev) => {
+        if (ev.lengthComputable) {
+          const pct = Math.round((ev.loaded / ev.total) * 100);
+          try { onProgress(pct); } catch (_) { /* ignore */ }
+        }
+      };
+
+      xhr.onload = () => {
+        const ct = xhr.getResponseHeader("content-type") || "";
+        let body: any = null;
+        try {
+          if (ct.includes("application/json")) body = JSON.parse(xhr.responseText);
+          else body = xhr.responseText;
+        } catch (e) {
+          body = xhr.responseText;
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(body);
+        } else {
+          const errMsg = (body && body.error) || (body && body.message) || `HTTP ${xhr.status}`;
+          reject(new Error(errMsg));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Network error during upload"));
+      xhr.onabort = () => reject(new Error("Upload aborted"));
+
+      xhr.send(fd);
+    });
+  },
+
+    /** Remove current avatar (clears avatar_url). Returns { avatar_url: null } */
+    async deleteMyAvatar() {
+      return this.delete(`/users/profile/avatar`);
+    },
 
   // ---- Classes (Admin/Trainer) ----
 

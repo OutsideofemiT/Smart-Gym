@@ -13,6 +13,7 @@ import cafeInventoryRoutes from "./routes/cafeInventory.routes";
 import stripeRoutes from "./routes/stripe.routes";
 import webhookRouter from "./routes/stripe.webhook";
 import adminAnalyticsRoutes from "./routes/adminAnalytics.routes";
+import membershipRoutes from "./routes/membership.routes";
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use("/api/adminAnalytics", adminAnalyticsRoutes);
 app.use("/api/access", accessRoutes);
 app.use("/api/classes", classRoutes);
 app.use("/api/stripe", stripeRoutes);
+app.use("/api/membership", membershipRoutes);
 
 // Static files (avatars served under /uploads/avatars/<file>)
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

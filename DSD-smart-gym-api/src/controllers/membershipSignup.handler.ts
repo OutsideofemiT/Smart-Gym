@@ -19,11 +19,34 @@ export const membershipSignupHandler = async (
   try {
     console.log("membershipSignupHandler hit");
     console.log("body:", req.body);
-    const { signup, success_url, cancel_url } = req.body ?? {};
-    // Validate the signup data (replace with your actual validator)
-    const ValidSignup = validateMembershipSignupOrThrow(signup);
+    const { signup: rawSignup, success_url, cancel_url } = req.body ?? {};
 
-    const email = signup?.email || req.body?.email;
+    // Build a complete signup payload using authenticated user info when available
+    const signup = {
+      ...rawSignup,
+    } as any;
+
+    // Attach user and gym ids from req.user (requireAuth should set these)
+    const user_id = req.user?.user_id || req.user?.sub || req.user?._id;
+    const gym_id = req.user?.gym_id || req.user?._id;
+    if (user_id) signup.user_id = signup.user_id || user_id;
+    if (gym_id) signup.gym_id = signup.gym_id || gym_id;
+
+    // If caller provided a single `name` string, try to split into first/last
+    if (!signup.first_name && !signup.last_name && typeof signup.name === "string") {
+      const parts = signup.name.trim().split(/\s+/);
+      signup.first_name = parts.shift() || "";
+      signup.last_name = parts.join(" ") || "";
+    }
+
+  // Validate the signup data (this will throw if required fields missing)
+  const ValidSignup = validateMembershipSignupOrThrow(signup);
+
+  // Debug: log constructed and validated signup so we can confirm req.user fields
+  console.log("constructed signup:", signup);
+  console.log("ValidSignup:", ValidSignup);
+
+  const email = signup?.email || req.body?.email;
     if (!email) {
       return res.status(400).json({ error: "Email is required for membership signup." });
     }
@@ -42,13 +65,9 @@ export const membershipSignupHandler = async (
       if (signup.plan.toLowerCase().includes("standard")) unit_amount = 2900;
     }
 
-    // Save the member profile to the database (MongoDB will assign user_id)
-    const memberProfile = await MemberProfile.create({
-      ...ValidSignup,
-      email,
-    });
-
     // Create a Stripe Checkout session for membership
+    // We do NOT create the MemberProfile here to avoid creating unpaid profiles.
+    // The MemberProfile will be created in the Stripe webhook after successful payment.
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -73,12 +92,11 @@ export const membershipSignupHandler = async (
         `${process.env.CLIENT_URL}/membership?checkout=cancel`,
       metadata: {
         kind: "membership",
-        profileId: String(memberProfile._id),
         signup: JSON.stringify(ValidSignup),
       },
     });
 
-    res.status(200).json({ id: session.id, url: session.url, profileId: memberProfile._id });
+    res.status(200).json({ id: session.id, url: session.url });
   } catch (err: any) {
     console.error("Membership signup error:", err);
     res.status(400).json({ error: err.message || "Failed to create membership session" });

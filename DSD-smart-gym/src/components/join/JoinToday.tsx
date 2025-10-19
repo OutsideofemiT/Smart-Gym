@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import ApiHandler from "../../utils/ApiHandler";
 import "../../styles/JoinToday.css";
 
+
 /** Types */
 type Plan = "standard" | "plus" | "premium";
 type JoinPayload = { name: string; email: string; phone: string; plan: Plan };
@@ -161,8 +162,20 @@ export default function JoinToday() {
       // Create the member account and auto-login (JWT saved by ApiHandler.signup)
       await ApiHandler.signup(form.name, form.email, password, gym_id);
 
-      // Future: send phone/plan to a profile endpoint if desired
-      // await ApiHandler.put("/users/me/profile", { phone: form.phone, plan: form.plan });
+      // Create membership checkout session on the server
+      try {
+        const payload = { signup: { name: form.name, email: form.email, phone: form.phone, plan: form.plan } };
+        const resp: any = await ApiHandler.post('/membership/signup', { signup: payload.signup });
+        const url = resp?.url || resp?.sessionUrl || resp?.session?.url;
+        if (url) {
+          // Redirect to Stripe Checkout
+          window.location.href = url;
+          return;
+        }
+      } catch (err: any) {
+        console.error('Membership checkout creation failed:', err);
+        // Fall back to member area if checkout creation failed
+      }
 
       setMessage("Welcome to Smart Gym! Redirecting…");
       navigate("/member", { replace: true });

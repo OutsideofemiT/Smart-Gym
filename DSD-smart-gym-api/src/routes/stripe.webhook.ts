@@ -19,6 +19,41 @@ async function processStripeEvent(event: Stripe.Event) {
       const session = event.data.object as Stripe.Checkout.Session;
       log("✅ checkout.session.completed %s", session.id);
       try {
+          // If this session is for membership signup, create the MemberProfile
+          const kind = (session.metadata as any)?.kind;
+          if (kind === "membership") {
+            try {
+              const signupRaw = (session.metadata as any)?.signup;
+              const signup = typeof signupRaw === "string" ? JSON.parse(signupRaw) : signupRaw;
+              const email = signup?.email || session.customer_email;
+              if (!email) {
+                log("Membership session completed but no email present in metadata");
+              } else {
+                const { MemberProfile } = await import("../models/memberProfile.model");
+                // Avoid duplicate profiles
+                const existing = await MemberProfile.findOne({ email: String(email).toLowerCase() });
+                if (!existing) {
+                  const profilePayload: any = {
+                    first_name: signup?.first_name || signup?.name || signup?.firstName || "",
+                    last_name: signup?.last_name || signup?.lastName || "",
+                    email: String(email).toLowerCase(),
+                    membership_status: "active",
+                    membership_tier: (signup?.plan || "standard").toLowerCase(),
+                    join_date: new Date(),
+                    gym_id: session.metadata?.gymId ? session.metadata.gymId : undefined,
+                  };
+                  // If membership requires a linked user account, this could be extended to set user_id
+                  await MemberProfile.create(profilePayload);
+                  log("Created MemberProfile for %s", email);
+                } else {
+                  log("MemberProfile for %s already exists", email);
+                }
+              }
+            } catch (err: any) {
+              log("Failed to create MemberProfile from membership session: %s", err?.message || err);
+            }
+          }
+
         const purchaseId = (session.metadata as any)?.purchaseId;
         if (purchaseId) {
           try {
