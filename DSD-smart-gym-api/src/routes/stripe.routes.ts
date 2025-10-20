@@ -101,8 +101,8 @@ router.post(
         line_items,
         success_url:
           success_url ??
-          `${process.env.CLIENT_URL}/cafe?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: cancel_url ?? `${process.env.CLIENT_URL}/cafe?checkout=cancel`,
+          `${process.env.CLIENT_URL}/member/cafe-ordering?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: cancel_url ?? `${process.env.CLIENT_URL}/member/cafe-ordering?checkout=cancel`,
         metadata: {
           kind: "cafe",
           purchaseId: String(purchase._id),

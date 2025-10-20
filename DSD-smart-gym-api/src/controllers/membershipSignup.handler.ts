@@ -86,10 +86,10 @@ export const membershipSignupHandler = async (
       customer_email: email,
       success_url:
         success_url ??
-        `${process.env.CLIENT_URL}/membership?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        `${process.env.CLIENT_URL}/nonmember/membership?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url:
         cancel_url ??
-        `${process.env.CLIENT_URL}/membership?checkout=cancel`,
+        `${process.env.CLIENT_URL}/nonmember/membership?checkout=cancel`,
       metadata: {
         kind: "membership",
         signup: JSON.stringify(ValidSignup),

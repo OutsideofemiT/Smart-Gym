@@ -18,10 +18,12 @@ dotenv.config();
 
 const app = express();
 
-// Explicit CORS origins
-const allowedOrigins = [
+// CORS: allow local dev (any localhost port), configured client URL, and production frontend
+const allowedOrigins: Array<string | RegExp> = [
+  process.env.CLIENT_URL || "https://smart-gym-jxxx.onrender.com",
+  /https?:\/\/localhost:\d+/,
+  // keep the explicit deployed hostname if you want to allow it
   "https://smart-gym-jxxx.onrender.com",
-  "http://localhost:3000" // for local dev/testing
 ];
 
 app.use(
@@ -29,11 +31,18 @@ app.use(
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg =
-          "The CORS policy for this site does not allow access from the specified Origin.";
+
+      // Accept if origin matches any allowedOrigin (string equality or RegExp)
+      const ok = allowedOrigins.some((o) => {
+        if (o instanceof RegExp) return o.test(origin);
+        return String(o) === origin;
+      });
+
+      if (!ok) {
+        const msg = "The CORS policy for this site does not allow access from the specified Origin.";
         return callback(new Error(msg), false);
       }
+
       return callback(null, true);
     },
     credentials: true,
@@ -82,9 +91,14 @@ if (fs.existsSync(clientBuildPath)) {
 // Compatibility redirect middleware (safer than array-based routes which can break on some path-to-regexp versions)
 app.use((req, res, next) => {
   const p = req.path || "";
-  if (p.startsWith("/member/") || p.startsWith("/nonmember/")) {
+  // Only perform the compatibility redirect in production, or when explicitly forced.
+  // This prevents a local dev backend from redirecting to a deployed CLIENT_URL
+  // (which caused unexpected logins / missing routes during development).
+  const force = process.env.FORCE_CLIENT_REDIRECT === "1";
+  if ((process.env.NODE_ENV === "production" || force) && (p.startsWith("/member/") || p.startsWith("/nonmember/"))) {
     const client = process.env.CLIENT_URL || "https://smart-gym-jxxx.onrender.com";
     const dest = `${client}${req.originalUrl}`;
+    console.log(`Redirecting ${req.originalUrl} -> ${dest}`);
     return res.redirect(302, dest);
   }
   return next();
