@@ -10,7 +10,8 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
   try {
     const { cart, success_url, cancel_url } = req.body;
 
-    const session = await stripe.checkout.sessions.create({
+  const clientBase = process.env.CLIENT_URL || "http://localhost:5173";
+  const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
       line_items: cart.map((item: any) => ({
         price_data: {
@@ -23,8 +24,10 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
         quantity: item.quantityOrdered,
       })),
       mode: "payment",
-      success_url: success_url || "http://localhost:5173/cafe?checkout=success",
-      cancel_url: cancel_url || "http://localhost:5173/cafe?checkout=cancel",
+      // Use hash routes so the static host always serves index.html and the SPA router handles the path
+      success_url:
+        success_url || `${clientBase}/#/member/cafe-ordering?checkout=success`,
+      cancel_url: cancel_url || `${clientBase}/#/member/cafe-ordering?checkout=cancel`,
     });
 
     res.status(200).json({ url: session.url });

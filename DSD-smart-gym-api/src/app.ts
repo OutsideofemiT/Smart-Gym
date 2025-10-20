@@ -76,6 +76,16 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
+// Compatibility redirect: if frontend is hosted separately (not copied into backend/public),
+// redirect client-side route requests to the frontend host so they resolve there instead of returning 404.
+// Uses CLIENT_URL environment variable (set to your frontend URL in production).
+app.get(["/member/*", "/nonmember/*"], (req, res) => {
+  const client = process.env.CLIENT_URL || "https://smart-gym-jxxx.onrender.com";
+  // Preserve the path and query when redirecting to the frontend host
+  const dest = `${client}${req.originalUrl}`;
+  return res.redirect(302, dest);
+});
+
 app.use((_req, res) => {
   console.log("404 hit:", _req.originalUrl);
   res.status(404).json({ error: "Not found" });

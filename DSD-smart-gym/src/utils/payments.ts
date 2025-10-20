@@ -8,8 +8,9 @@ export async function startStripeCheckout(cart: any[]) {
     const stripe = await stripePromise;
     if (!stripe) throw new Error("Stripe failed to load.");
 
-    const successUrl = `${window.location.origin}/member/cafe-ordering?checkout=success`;
-    const cancelUrl = `${window.location.origin}/member/cafe-ordering?checkout=cancel`;
+  // Use hash routes so Stripe redirects never hit the server's path routing and the SPA router handles the route
+  const successUrl = `${window.location.origin}/#/member/cafe-ordering?checkout=success`;
+  const cancelUrl = `${window.location.origin}/#/member/cafe-ordering?checkout=cancel`;
 
     const data = await ApiHandler.post("/stripe/create-checkout-session", {
       cart,
