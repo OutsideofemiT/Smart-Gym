@@ -7,7 +7,7 @@
     "dev": "nodemon src/app.ts",
     "build": "tsc",
     "start": "node dist/app.js",
-    "stripe:listen": "C:\\\\Users\\\\carme\\\\Downloads\\\\stripe_1.29.0_windows_x86_64\\\\stripe.exe listen --events checkout.session.completed,payment_intent.succeeded --forward-to localhost:5000/stripe/webhook",
+  "stripe:listen": "C:\\\\Users\\\\carme\\\\Downloads\\\\stripe_1.29.0_windows_x86_64\\\\stripe.exe listen --events checkout.session.completed,charge.succeeded,charge.updated,payment_intent.succeeded --forward-to http://localhost:10000/api/stripe/webhook",
     "stripe:trigger": "C:\\\\Users\\\\carme\\\\Downloads\\\\stripe_1.29.0_windows_x86_64\\\\stripe.exe trigger checkout.session.completed",
     "stripe:whoami": "C:\\\\Users\\\\carme\\\\Downloads\\\\stripe_1.29.0_windows_x86_64\\\\stripe.exe whoami",
     "dev:all": "concurrently -k -n api,stripe \"npm run dev\" \"npm run stripe:listen\""
