@@ -95,14 +95,34 @@ router.post(
 
       const purchase = await CafePurchase.create(purchasePayload);
 
+      // Helper: build a client URL and, when serving a non-SPA static site,
+      // optionally point to the index.html file so redirects land on an existing file.
+      const buildClientUrl = (path: string) => {
+        const client = process.env.CLIENT_URL || "https://smart-gym-jxxx.onrender.com";
+        let url = `${client}${path}`;
+        if (process.env.CLIENT_IS_NOT_SPA === "1") {
+          // Ensure it ends with /index.html so static hosts will serve a file
+          if (!url.endsWith("/index.html")) {
+            url = url.replace(/\/+$/, "") + "/index.html";
+          }
+        }
+        return url;
+      };
+
+      const successUrl = success_url ?? buildClientUrl(
+        `/member/cafe-ordering?checkout=success&session_id={CHECKOUT_SESSION_ID}`
+      );
+      const cancelUrl = cancel_url ?? buildClientUrl(`/member/cafe-ordering?checkout=cancel`);
+
+      // Debug: log the exact URLs used for troubleshooting deploy redirects
+      console.log(`Creating Stripe session for purchase ${purchase._id}: success_url=${successUrl} cancel_url=${cancelUrl}`);
+
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
         payment_method_types: ["card"],
         line_items,
-        success_url:
-          success_url ??
-          `${process.env.CLIENT_URL}/member/cafe-ordering?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: cancel_url ?? `${process.env.CLIENT_URL}/member/cafe-ordering?checkout=cancel`,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
         metadata: {
           kind: "cafe",
           purchaseId: String(purchase._id),

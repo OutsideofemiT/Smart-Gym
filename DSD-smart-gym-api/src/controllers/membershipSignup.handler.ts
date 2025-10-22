@@ -68,6 +68,17 @@ export const membershipSignupHandler = async (
     // Create a Stripe Checkout session for membership
     // We do NOT create the MemberProfile here to avoid creating unpaid profiles.
     // The MemberProfile will be created in the Stripe webhook after successful payment.
+    const buildClientUrl = (path: string) => {
+      const client = process.env.CLIENT_URL || "https://smart-gym-jxxx.onrender.com";
+      let url = `${client}${path}`;
+      if (process.env.CLIENT_IS_NOT_SPA === "1") {
+        if (!url.endsWith("/index.html")) {
+          url = url.replace(/\/+$/, "") + "/index.html";
+        }
+      }
+      return url;
+    };
+
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
@@ -84,12 +95,10 @@ export const membershipSignupHandler = async (
         },
       ],
       customer_email: email,
-      success_url:
-        success_url ??
-        `${process.env.CLIENT_URL}/nonmember/membership?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url:
-        cancel_url ??
-        `${process.env.CLIENT_URL}/nonmember/membership?checkout=cancel`,
+      success_url: success_url ?? buildClientUrl(
+        `/nonmember/membership?checkout=success&session_id={CHECKOUT_SESSION_ID}`
+      ),
+      cancel_url: cancel_url ?? buildClientUrl(`/nonmember/membership?checkout=cancel`),
       metadata: {
         kind: "membership",
         signup: JSON.stringify(ValidSignup),
