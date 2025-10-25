@@ -47,6 +47,7 @@ const MemberProfile: FC = () => {
   });
 
   const [avatarPreview, setAvatarPreview] = useState<string | undefined>(undefined);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const [uploadPct, setUploadPct] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -83,6 +84,7 @@ const MemberProfile: FC = () => {
 
         setForm(loaded);
         setAvatarPreview(loaded.avatar_url);
+        setImageLoadError(false);
       } catch (e: any) {
         setMsg(e?.message || "Failed to load profile.");
       } finally {
@@ -90,6 +92,11 @@ const MemberProfile: FC = () => {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    // reset image error state whenever the preview changes
+    setImageLoadError(false);
+  }, [avatarPreview]);
 
   const setField = (k: keyof ProfileForm, v: any) => setForm((p) => ({ ...p, [k]: v }));
   const setAddr = (k: keyof Address, v: string) =>
@@ -186,11 +193,12 @@ const MemberProfile: FC = () => {
         <div className="profile-modal" onClick={(e) => e.stopPropagation()}>
           <header className="profile-modal__header">
             <div className="profile-modal__identity">
-              {avatarPreview ? (
+              {avatarPreview && !imageLoadError ? (
                 <img
                   src={avatarPreview}
                   alt={`${(form.first_name + " " + form.last_name).trim() || "Member"} avatar`}
                   className="profile-modal__avatar"
+                  onError={() => setImageLoadError(true)}
                 />
               ) : (
                 <div

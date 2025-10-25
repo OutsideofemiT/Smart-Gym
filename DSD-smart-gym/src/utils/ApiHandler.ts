@@ -1,9 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// src/utils/ApiHandler.ts
-// Use VITE_API_URL when provided, otherwise fall back to a sane relative default
-// so frontend can call the backend at the same origin under /api. This avoids
-// generating requests to the literal string "undefined" which causes
-// a browser "Failed to fetch" error when env is not configured.
 const API_BASE_URL = (import.meta.env.VITE_API_URL as string) || "/api";
 if (!import.meta.env.VITE_API_URL) console.info("[Api] VITE_API_URL not set — using default '/api'");
 
