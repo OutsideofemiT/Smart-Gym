@@ -4,7 +4,6 @@ Smart Gym is a full-stack fitness management platform designed to streamline gym
 
 [Live Demo](https://smart-gym-jxxx.onrender.com/)
 
-Smart Gym is a full-stack fitness management platform ...
 
 
 ## Project Origin
