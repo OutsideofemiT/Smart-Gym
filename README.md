@@ -2,6 +2,10 @@
 
 Smart Gym is a full-stack fitness management platform designed to streamline gym operations, enhance member experience, and provide robust analytics for gym owners and staff.
 
+[Live Demo](https://smart-gym-jxxx.onrender.com/)
+
+
+
 ## Project Origin
 
 This project was started under the **Dallas Software Developers Cohort (July–August 2025)** with the following team members:
@@ -88,6 +92,64 @@ As a core developer and project maintainer, my contributions include:
 5. Access the app at `http://localhost:3000` (or your configured port).
 
 ---
+## How to Use Smart Gym
+
+### Sign Up & Member Portal
+
+- Click **Join Today** to register as a new member (payment is not required for sign-up).
+- After sign-up, you’ll enter your **Member Portal**.
+
+#### Profile Setup
+
+- Access your profile from the navigation menu.
+- Set your profile details and upload a profile image (default avatar with initials if none uploaded).
+
+#### Member Features
+
+- **Check-In:** Scan your personal QR code in-app at the gym.
+- **Classes:** View, sign up for, and manage your fitness classes.
+- **Smart Gym Café:** Order from the café directly; Stripe payment is enabled for purchases.
+
+    - **For testing Stripe payments:**  
+      Use card number `4242 4242 4242 4242`, any future expiry date, and any 3-digit CVV.
+
+- **Account Management:** Update your personal info and membership settings.
+
+---
+
+### Admin Dashboard Access
+
+Use these demo admin credentials to explore the dashboard:
+
+- **Email:** admin@email.com
+- **Password:** 123123123
+
+Admin features include:
+- Viewing analytics
+- Managing classes and members
+- Overseeing café inventory
+- Full admin account controls
+
+---
+
+### Trainer Calendar
+
+Trainer demo credentials:
+
+- **Email:** trainer1@email.com
+- **Password:** 12341234
+
+Trainer features:
+- View/manage training schedule and class assignments.
+
+---
+
+**Notes:**
+- All main features are in the Member Portal—access after sign-up.
+- Admin and trainer dashboards require demo account logins above.
+- Stripe payment for café orders is test mode only (see card info above).
+- This project is a work in progress; features and UI may change.
+
 
 ## License
 
